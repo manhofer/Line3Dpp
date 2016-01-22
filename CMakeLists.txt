@@ -167,6 +167,9 @@ ELSE(L3DPP_CUDA)
 ENDIF(L3DPP_CUDA)
 target_link_libraries(line3Dpp ${ALL_LIBRARIES})
 
+option(APP_LINE_3D++_BUILD_EXECUTABLES "Line3D++: build executables" ON)
+
+IF(APP_LINE_3D++_BUILD_EXECUTABLES)
 #----- Add main for VisualSfM --------
 add_executable(runLine3Dpp_vsfm main_vsfm.cpp)
 target_link_libraries(runLine3Dpp_vsfm line3Dpp)
@@ -186,3 +189,4 @@ target_link_libraries(runLine3Dpp_mavmap ${ALL_LIBRARIES})
 add_executable(runLine3Dpp_pix4d main_pix4d.cpp)
 target_link_libraries(runLine3Dpp_pix4d line3Dpp)
 target_link_libraries(runLine3Dpp_pix4d ${ALL_LIBRARIES})
+ENDIF(APP_LINE_3D++_BUILD_EXECUTABLES)
