@@ -30,7 +30,7 @@ If you use our algorithm in any of your publications or projects, please cite ou
     Aachen, 2015.
 
 **Note:** Line3D++ is not completely identical to the algorithm described in the paper above (*Line3D*), but rather a modified and extended version,
-with similar core principles.
+with similar core principles. The original version can be found here: http://github.com/manhofer/Line3D (*not updated anymore*).
 
 Requirements
 ============
@@ -137,7 +137,7 @@ If you are unsure about this process just have a look at one of the generic exec
 ## 2. Executable use
 
 If you are using one of the supported SfM pipelines, you can simply use one of the provided executables to generate a line-based 3D model with the SfM output. Since all these pipelines
-work slightly differently and have non-standardized output formats, the call of the executables varies as well.
+work slightly different, and have non-standardized output formats, the call of the executables varies as well.
 
 ### VisualSfM
 
@@ -207,10 +207,10 @@ The 3D line model is by default stored in three different ways:
 * `.obj` file
 * `.txt` file
 
-The files are by default placed in the folder `<image_folder>/Line3D++/` and named according to the parameters that were used to create the result.
+The files are by default placed in the folder `<image_folder>/Line3D++/`, and named according to the parameters that were used to create the result.
 
 The `.stl` file can be opened e.g. in [Meshlab](http://meshlab.sourceforge.net/). If you do so, you should see a window which states "Post-Open Processing". You have to
-untick the option "Unify Duplicated Vertices" and press OK. Then switch to "Wireframe", "Hidden Lines" or "Flat Lines" modes and you should see a result.
+untick the option "Unify Duplicated Vertices" and press OK. Then switch to "Wireframe", "Hidden Lines" or "Flat Lines" mode and you should see a result.
 
 The `.obj` file can be opened e.g. in [CloudCompare](http://www.danielgm.net/cc/).
 
@@ -242,7 +242,7 @@ Our algorithm uses three external components, which are integrated into the sour
 
 	Replicator Graph Clustering,
 	M. Donoser,
-	British Conference on Computer Vision (BMVC), 2013.
+	British Machine Vision Conference (BMVC), 2013.
 
 All three algorithms are publicly available, for which we are very grateful to the respective authors.
 If you are using **OpenCV 3** the LSD version that is included in OpenCV is used instead of the version that is integrated into our source code (they should be identical).
@@ -254,9 +254,9 @@ If you have any problems, questions or suggestions please do not hesitate to con
 
 **Main contact:**
 
-Manuel Hofer
-Institute for Computer Graphics and Vision
-Graz University of Technology
-Graz/Austria
-mail: hofer [at] icg.tugraz.at
-web:  http://aerial.icg.tugraz.at/
+Manuel Hofer  
+Institute for Computer Graphics and Vision  
+Graz University of Technology  
+Graz/Austria  
+mail: hofer [at] icg.tugraz.at  
+web:  http://aerial.icg.tugraz.at/  
