@@ -247,15 +247,15 @@ Our algorithm uses three external components, which are integrated into the sour
 All three algorithms are publicly available, for which we are very grateful to the respective authors.
 If you are using **OpenCV 3** the LSD version that is included in OpenCV is used instead of the version that is integrated into our source code (they should be identical).
 
-Contact
-=======
-
-If you have any problems, questions or suggestions please do not hesitate to contact us! Also if you find some bugs please let us know!
-
 Acknowledgements
 ================
 
 This work has been supported by the Austrian Research Promotion Agency (FFG) project FreeLine (Bridge1/843450).
+
+Contact
+=======
+
+If you have any problems, questions or suggestions please do not hesitate to contact us! Also if you find some bugs please let us know!
 
 **Main contact:**
 
