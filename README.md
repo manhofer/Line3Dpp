@@ -47,7 +47,7 @@ Requirements
 
 * CUDA (optional)
 * OpenMP (optional)
-* Ceres-Solver (optional, **must be build as shared library!**)
+* Ceres-Solver (optional, **must be built as shared library!**)
 
 The code has been tested under **Ubuntu 14.04 LTS** with the following versions:
 
@@ -251,6 +251,11 @@ Contact
 =======
 
 If you have any problems, questions or suggestions please do not hesitate to contact us! Also if you find some bugs please let us know!
+
+Acknowledgements
+================
+
+This work has been supported by the Austrian Research Promotion Agency (FFG) project FreeLine (Bridge1/843450).
 
 **Main contact:**
 
