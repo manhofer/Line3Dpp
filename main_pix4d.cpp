@@ -78,7 +78,8 @@ Eigen::Vector3d linearHomTriangulation(std::list<std::pair<size_t,Eigen::Vector2
 }
 
 // INFO:
-// This executable reads Pix4D results (<project_prefix>/1_initial/params/*.txt) and executes the Line3D++ algorithm
+// This executable reads Pix4D results (<project_prefix>/1_initial/params/*.txt) and executes the Line3D++ algorithm.
+// If distortion coefficients are stored in the result file, you need to use the _original_ (distorted) images!
 //
 // NOTE:
 // The algorithm takes the camera poses from the <project_prefix>_calibrated_camera_parameters.txt file,
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
 {
     TCLAP::CmdLine cmd("LINE3D++");
 
-    TCLAP::ValueArg<std::string> inputArg("i", "image_folder", "folder containing the images", true, ".", "string");
+    TCLAP::ValueArg<std::string> inputArg("i", "input_folder", "folder containing the images", true, ".", "string");
     cmd.add(inputArg);
 
     TCLAP::ValueArg<std::string> pix4dArg("b", "params_folder", "folder containing the proeject files <project_prefix>_calibrated_camera_parameters.txt and <project_prefix>_tp_pix4d.txt", true, "", "string");
@@ -98,13 +99,13 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<std::string> prefixArg("f", "project_prefix", "project name and output file prefix", true, "", "string");
     cmd.add(prefixArg);
 
-    TCLAP::ValueArg<std::string> outputArg("o", "output_folder", "folder where result and temporary files are stored (if not specified --> input_folder+'/Line3D++/')", false, "", "string");
+    TCLAP::ValueArg<std::string> outputArg("o", "output_folder", "folder where result and temporary files are stored (if not specified --> image_folder+'/Line3D++/')", false, "", "string");
     cmd.add(outputArg);
 
     TCLAP::ValueArg<int> scaleArg("w", "max_image_width", "scale image down to fixed max width for line segment detection", false, L3D_DEF_MAX_IMG_WIDTH, "int");
     cmd.add(scaleArg);
 
-    TCLAP::ValueArg<int> neighborArg("n", "num_matching_neighbors", "number of neighbors for matching (-1 --> use all)", false, L3D_DEF_MATCHING_NEIGHBORS, "int");
+    TCLAP::ValueArg<int> neighborArg("n", "num_matching_neighbors", "number of neighbors for matching", false, L3D_DEF_MATCHING_NEIGHBORS, "int");
     cmd.add(neighborArg);
 
     TCLAP::ValueArg<float> sigma_A_Arg("a", "sigma_a", "angle regularizer", false, L3D_DEF_SCORING_ANG_REGULARIZER, "float");
@@ -359,7 +360,7 @@ int main(int argc, char *argv[])
     std::cout << "Pix4D: #cameras = " << img2pos.size() << std::endl;
     std::cout << "Pix4D: #points  = " << feat_observations.size() << std::endl;
 
-    // triangulate points
+    // triangulate points (parallel)
     std::cout << "triangulating..." << std::endl;
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
@@ -379,7 +380,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // load images sequentially
+    // load images (parallel)
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP

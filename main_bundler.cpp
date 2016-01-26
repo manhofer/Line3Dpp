@@ -40,7 +40,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "line3D.h"
 
 // INFO:
-// This executable reads bundler results (bundle.rd.out) and executes the Line3D++ algorithm
+// This executable reads bundler results (bundle.rd.out) and executes the Line3D++ algorithm.
+// If distortion coefficients are stored in the bundle file, you need to use the _original_
+// (distorted) images!
 
 int main(int argc, char *argv[])
 {
@@ -58,7 +60,7 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<int> scaleArg("w", "max_image_width", "scale image down to fixed max width for line segment detection", false, L3D_DEF_MAX_IMG_WIDTH, "int");
     cmd.add(scaleArg);
 
-    TCLAP::ValueArg<int> neighborArg("n", "num_matching_neighbors", "number of neighbors for matching (-1 --> use all)", false, L3D_DEF_MATCHING_NEIGHBORS, "int");
+    TCLAP::ValueArg<int> neighborArg("n", "num_matching_neighbors", "number of neighbors for matching", false, L3D_DEF_MATCHING_NEIGHBORS, "int");
     cmd.add(neighborArg);
 
     TCLAP::ValueArg<float> sigma_A_Arg("a", "sigma_a", "angle regularizer", false, L3D_DEF_SCORING_ANG_REGULARIZER, "float");
@@ -246,7 +248,7 @@ int main(int argc, char *argv[])
     }
     bundle_file.close();
 
-    // load images sequentially
+    // load images (parallel)
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP

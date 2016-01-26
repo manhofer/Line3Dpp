@@ -18,7 +18,8 @@ For your convenience, there are several example executables included that can di
 * VisualSfM - http://ccwu.me/vsfm/
 * bundler   - http://www.cs.cornell.edu/~snavely/bundler/
 * Pix4D     - https://pix4d.com/
-* mavmap    - https://github.com/mavmap/mavmap
+* mavmap    - https://github.com/mavmap/mavmap/
+* OpenMVG    - https://github.com/openMVG/openMVG/
 
 More information about Line3D++ and its usage can be found below.
 
@@ -48,6 +49,7 @@ Requirements
 * CUDA (optional)
 * OpenMP (optional)
 * Ceres-Solver (optional, **must be built as shared library!**)
+* RapidJSON (optional, for OpenMVG executable only)
 
 The code has been tested under **Ubuntu 14.04 LTS** with the following versions:
 
@@ -139,6 +141,8 @@ If you are unsure about this process just have a look at one of the generic exec
 If you are using one of the supported SfM pipelines, you can simply use one of the provided executables to generate a line-based 3D model with the SfM output. Since all these pipelines
 work slightly different, and have non-standardized output formats, the call of the executables varies as well.
 
+**Note:** If distortion coefficients are stored in the respective SfM result files, you need to use the original images! Line3D++ will use these coefficients to undistort the images automatically.
+
 ### VisualSfM
 
 This executable reads VisualSfM results in the form of an `.nvm` file (parameter `-m` below).
@@ -163,6 +167,13 @@ This executable reads mavmap results in the form of a `image-data-*.txt` file (p
 
 	./runLine3Dpp_mavmap -i <image_folder> -b <full_path_to_mavmap_output_file> [-f <image_prefix> -t <image_extension>]
 
+### OpenMVG
+
+This executable reads OpenMVG results in the form of an `sfm_data.json` file (parameter `-j` below).  
+**Note:** This executable is only available when RapidJSON is properly installed.
+
+	./runLine3Dpp_openmvg -i <image_folder> -j <full_path_to_sfm_data_file>
+
 All additional command line parameters are optional. They correspond to the parameters of the algorithm itself, and their meaning can be found in the `line3d.h` main header
 (above the function definition, in which the parameters are needed). In addition, the most important parameters are listed below.
 
@@ -173,7 +184,7 @@ To test the Line3D++ algorithm, a small test dataset is included in the folder `
 
 	./runLine3Dpp_vsfm -i ../testdata/ -m ../testdata/vsfm_result.nvm
 
-The results will be placed in `Line3D++/testdata/Line3D++/`, and the reference results are located in `Line3D++/testdata/Line3D++_ref/` (with and without CERES optimization). See the "Output" section below, on how to open and view the results.
+The results will be placed in `Line3D++/testdata/Line3D++/`, and the reference results are located in `Line3D++/testdata/Line3D++_ref/` (with and without CERES optimization). See the "Output" section below on how to open and view the results.
 
 Important parameters
 ====================

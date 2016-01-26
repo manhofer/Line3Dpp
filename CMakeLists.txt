@@ -109,6 +109,10 @@ IF(OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 ENDIF(OPENMP_FOUND)
 
+##-----------------------------------------------------------------------------
+## RapidJSON
+FIND_PACKAGE(RapidJSON)
+
 add_definitions(-frounding-math)
 
 ## switches for external (optional) libs
@@ -170,6 +174,7 @@ target_link_libraries(line3Dpp ${ALL_LIBRARIES})
 option(APP_LINE_3D++_BUILD_EXECUTABLES "Line3D++: build executables" ON)
 
 IF(APP_LINE_3D++_BUILD_EXECUTABLES)
+
 #----- Add main for VisualSfM --------
 add_executable(runLine3Dpp_vsfm main_vsfm.cpp)
 target_link_libraries(runLine3Dpp_vsfm line3Dpp)
@@ -189,4 +194,14 @@ target_link_libraries(runLine3Dpp_mavmap ${ALL_LIBRARIES})
 add_executable(runLine3Dpp_pix4d main_pix4d.cpp)
 target_link_libraries(runLine3Dpp_pix4d line3Dpp)
 target_link_libraries(runLine3Dpp_pix4d ${ALL_LIBRARIES})
+
+#----- Add main for OpenMVG --------
+IF(RapidJSON_FOUND)
+add_executable(runLine3Dpp_openmvg main_openmvg.cpp)
+target_link_libraries(runLine3Dpp_openmvg line3Dpp)
+target_link_libraries(runLine3Dpp_openmvg ${ALL_LIBRARIES})
+ENDIF(RapidJSON_FOUND)
+
 ENDIF(APP_LINE_3D++_BUILD_EXECUTABLES)
+
+

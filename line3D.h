@@ -57,7 +57,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * Line3D++ - Base Class
  * ====================
  * Line-based Multi-view Stereo
- * Reference: [add thesis]
+ * Reference:
+ * "Line3D: Efficient 3D Scene Abstraction for the Built Environment"
+ * Manuel Hofer, Michael Maurer, Horst Bischof,
+ * German Conference on Pattern Recognition (GCPR), 2015.
  * ====================
  * Author: M.Hofer, 2015
  */
@@ -67,6 +70,21 @@ namespace L3DPP
     class Line3D
     {
     public:
+        // Line3D++ constructor
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // output_folder            - folder where the temp directory will be created
+        // load_segments            - if true  -> detected 2D line segments will be serialized to hard drive
+        //                                        and reloaded when the dataset is processed again
+        //                            if false -> the line segments are redetected everytime
+        // max_img_width            - maximum width (or height, for portrait images) to which images are resized
+        //                            for line segment detection (coordinates will be upscaled afterwards!)
+        // max_line_segments        - maximum number of 2D line segments per image (sorted by length)
+        // neighbors_by_worldpoints - if true  -> matching neighbors (images) are derived from the common worldpoints
+        //                            if false -> an explicit list of matching neighbors has to be provided
+        //                            (--> see void addImage(...))
+        // use_GPU                  - uses the GPU for processing whenever possible (highly recommended, requires CUDA!)
         Line3D(const std::string output_folder,
                const bool load_segments=L3D_DEF_LOAD_AND_STORE_SEGMENTS,
                const unsigned int max_img_width=L3D_DEF_MAX_IMG_WIDTH,
@@ -75,17 +93,61 @@ namespace L3DPP
                const bool use_GPU=true);
         ~Line3D();
 
-        // add image [multithreading safe]
-        // (1) visual neighbors computed from common worldpoints
-        // (2) visual neighbors explicitely given
-        // --> depends on parameter "neighbors_by_worldpoints" in constructor!
+        // void addImage(...): add a new image to the system [multithreading safe]
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // camID            - unique ID of the image
+        // image            - the image itself (CV_8U or CV_8UC3 supported)
+        // K                - camera intrinsics (3x3)
+        // R                - camera rotation (3x3)
+        // t                - camera translation (3x1) [camera model: point2D = K [R | t] point3D]
+        // median_depth     - median 3D worldpoint depth for this camera (i.e. median
+        //                    Euclidean distance of the worldpoints to the camera center)
+        //                    Note: this is only needed when sigma_position is in world-coordinates (i.e. metric)!
+        //                          when sigma_position is in pixels this value is irrelevant!
+        // wps_or_neighbors - a list with the IDs of the
+        //                    (a) worldpoints seen by this camera                --> if neighbors_by_worldpoints=true (see constructor)
+        //                    (b) images with which this image should be matched --> if neighbors_by_worldpoints=false
+        // line_segments    - list with the 2D line segments for this image. if it is empty (default) the line segments
+        //                    will be detected by the LSD algorithm automatically
         void addImage(const unsigned int camID, cv::Mat& image,
                       const Eigen::Matrix3d K, const Eigen::Matrix3d R,
                       const Eigen::Vector3d t, const float median_depth,
                       std::list<unsigned int>& wps_or_neighbors,
                       std::vector<cv::Vec4f> line_segments=std::vector<cv::Vec4f>());
 
-        // match images
+        // void undistortImage(...): undistorts an image based on given distortion coefficients
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // inImg             - distorted image (input)
+        // outImg            - undistorted image (output)
+        // radial_coeffs     - up to three radial distortion coefficients (set unused to zero!)
+        // tangential_coeffs - up tp two tangential distortion coefficients (set unused to zero!)
+        // K                 - camera intrinsics (3x3)
+        void undistortImage(const cv::Mat& inImg, cv::Mat& outImg,
+                            const Eigen::Vector3d radial_coeffs,
+                            const Eigen::Vector2d tangential_coeffs,
+                            const Eigen::Matrix3d& K);
+
+        // void matchImages(...): matches 2D line segments between images
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // sigma_position   - spatial regularizer (for scoring and clustering)
+        //                    if > 0 -> in pixels (regularizer derived from image space and unprojected into 3D space) [scale invariant]
+        //                    if < 0 -> in "meters" (regularizer directly defined in world coordinates) [not scale invariant]
+        //                    the second method is recommended when the scale is known!
+        // sigma_angle      - angular regularizer (for scoring and clustering)
+        //                    defined in degrees (not radiants!)
+        // num_neighbors    - number of neighboring images with which each image is matched
+        // epipolar_overlap - minimum overlap of a line segment with the epipolar beam of another segment,
+        //                    to be considered a potential match (in [0,1])
+        // min_baseline     - minimum baseline between two images for matching (in world-coordinates!)
+        // kNN              - k-nearest-neighbor matching
+        //                    if > 0  -> keep only the k matches with the highest epipolar overlap (per image)
+        //                    if <= 0 -> keep all matches that fulfill the epipolar_overlap
         void matchImages(const float sigma_position=L3D_DEF_SCORING_POS_REGULARIZER,
                          const float sigma_angle=L3D_DEF_SCORING_ANG_REGULARIZER,
                          const unsigned int num_neighbors=L3D_DEF_MATCHING_NEIGHBORS,
@@ -93,42 +155,71 @@ namespace L3DPP
                          const float min_baseline=L3D_DEF_MIN_BASELINE,
                          const int kNN=L3D_DEF_KNN);
 
-        // reconstruct 3D model
+        // void reconstruct3Dlines(...): reconstruct a line-based 3D model (after matching)
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // visibility_t      - minimum number of different cameras from which clustered 2D segments must originate,
+        //                     such that the resulting 3D line is considered to be valid
+        // perform_diffusion - perform Replicator Dynamics Diffusion [Donoser, BMVC'13] before
+        //                     segment clustering
+        // collinearity_t    - threshold (in pixels) for segments from one image to be considered potentially collinear
+        //                     if <= 0 -> collinearity not considered (default)
+        // use_CERES         - 3D lines are optimized (bundled) using the Ceres-Solver (recommended!)
+        // max_iter_CERES    - maximum number of iterations for Ceres
         void reconstruct3Dlines(const unsigned int visibility_t=L3D_DEF_MIN_VISIBILITY_T,
                                 const bool perform_diffusion=L3D_DEF_PERFORM_RDD,
                                 const float collinearity_t=L3D_DEF_COLLINEARITY_T,
                                 const bool use_CERES=L3D_DEF_USE_CERES,
                                 const unsigned int max_iter_CERES=L3D_DEF_CERES_MAX_ITER);
 
-        // get reconstructed 3D model
+        // void get3Dlines(...): returns the current 3D model
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // result - list of reconstructed 3D lines (see "segment3D.h")
         void get3Dlines(std::vector<L3DPP::FinalLine3D>& result);
 
-        // save result
+        // void saveResultAs*(...): saves current 3D model in different ways
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // output_folder - folder where to place the result
+        //
+        // Note: see README.md for a description of the output formats!
         void saveResultAsSTL(const std::string output_folder);
         void saveResultAsOBJ(const std::string output_folder);
         void save3DLinesAsTXT(const std::string output_folder);
+
+        // Eigen::Vector4f getSegmentCoords2D(...): provides access to the 2D segment coordinates
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // seg2D - desired 2D segment (camID and segmentID)
+        //
+        // camID - camera ID of desired 2D line segment
+        // segID - segment ID of desired 2D line segment
+        Eigen::Vector4f getSegmentCoords2D(const L3DPP::Segment2D seg2D);
+        Eigen::Vector4f getSegmentCoords2D(const unsigned int camID,
+                                           const unsigned int segID);
+
+        // size_t numImages(...): returns the number of images that have been added (addImage(...))
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // none
+        size_t numImages(){return views_.size();}
+
+        // --------------------------------------------------
+        // helper functions (needed in specific executables):
+        // --------------------------------------------------
 
         // rotation matrix from roll, pitch and yaw (rodriguez)
         Eigen::Matrix3d rotationFromRPY(const double roll, const double pitch,
                                         const double yaw);
 
-        // data access
-        size_t numImages(){return views_.size();}
-
-        // segment access
-        Eigen::Vector4f getSegmentCoords2D(const L3DPP::Segment2D seg2D);
-        Eigen::Vector4f getSegmentCoords2D(const unsigned int camID,
-                                           const unsigned int segID);
-
-        // create an output filename based on the parameter settings
+        // create an output filename based on the current parameter settings
         std::string createOutputFilename();
-
-        // undistorts an image based on up to three radial distortion-
-        // and two tangential distortion parameters
-        void undistortImage(const cv::Mat& inImg, cv::Mat& outImg,
-                            const Eigen::Vector3d radial_coeffs,
-                            const Eigen::Vector2d tangential_coeffs,
-                            const Eigen::Matrix3d& K);
 
     private:
         // process worldpoint list
