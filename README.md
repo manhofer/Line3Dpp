@@ -170,7 +170,7 @@ This executable reads mavmap results in the form of a `image-data-*.txt` file (p
 ### OpenMVG
 
 This executable reads OpenMVG results in the form of an `sfm_data.json` file (parameter `-j` below).  
-**Note:** This executable is only available when RapidJSON is properly installed.
+**Note:** This executable is only available when [RapidJSON](https://github.com/miloyip/rapidjson) is properly installed.
 
 	./runLine3Dpp_openmvg -i <image_folder> -j <full_path_to_sfm_data_file>
 
