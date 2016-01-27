@@ -5,7 +5,7 @@ Line3D++
 About
 =====
 
-Line3D++ is a line-based Multi-View Stereo (MVS) algorithm, that can generate 3D line models from oriented image
+Line3D++ is a line-based Multi-View Stereo (MVS) algorithm written in C++, that can generate 3D line models from oriented image
 sequences (e.g. Structure-from-Motion results). 
 
 ![Teaser Image](teaser.png)
