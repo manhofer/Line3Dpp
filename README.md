@@ -207,7 +207,7 @@ this option, since it results in more accurate 3D models.
 
 The reconstruction principle of this algorithm is based on geometric reasoning. If you have several images from exactly the same viewpoint in your reconstruction, every 2D line segment match
 among these images makes perfect sense, even if it is wrong. Hence, we need a minimum baseline (Euclidean distance between the camera centers) between any image pair that is considered for matching.
-This value is defined in world coordinates! The default value is 0.1 (i.e. 10cm in a metric reconstruction), which usually works fine for the general case (e.g. when the SfM result is scaled such that the distance between the first two cameras is one, which is usually done in any SfM pipeline when no scale information is available).
+This value is defined in world coordinates! The default value is 0.01 (i.e. 1cm in a metric reconstruction), which usually works fine for the general case (e.g. when the SfM result is scaled such that the distance between the first two cameras is one, which is usually done in any SfM pipeline when no scale information is available).
 
 Output
 ======

@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     unsigned int maxNumSegments = segNumArg.getValue();
     unsigned int visibility_t = visibilityArg.getValue();
 
-    // check if NVM file exists
+    // check if json file exists
     boost::filesystem::path json(jsonFile);
     if(!boost::filesystem::exists(json))
     {
@@ -170,29 +170,29 @@ int main(int argc, char *argv[])
         rapidjson::Value& array_element = s[i];
         rapidjson::Value& view_data = array_element["value"]["ptr_wrapper"]["data"];
 
-        rapidjson::Value& filename = view_data["filename"];
-        rapidjson::Value& view_id = view_data["id_view"];
-        rapidjson::Value& intrinsic_id = view_data["id_intrinsic"];
-        rapidjson::Value& pose_id = view_data["id_pose"];
+        std::string filename = view_data["filename"].GetString();
+        unsigned int view_id = view_data["id_view"].GetUint();
+        unsigned int intrinsic_id = view_data["id_intrinsic"].GetUint();
+        unsigned int pose_id = view_data["id_pose"].GetUint();
 
-        std::string full_path = inputFolder+"/"+filename.GetString();
+        std::string full_path = inputFolder+"/"+filename;
         boost::filesystem::path full_path_check(full_path);
         if(boost::filesystem::exists(full_path_check))
         {
             // image exists
             cams_imgFilenames[i] = full_path;
-            cams_view_IDs[i] = view_id.GetUint();
-            cams_intrinsic_IDs[i] = intrinsic_id.GetUint();
-            cams_pose_IDs[i] = pose_id.GetUint();
+            cams_view_IDs[i] = view_id;
+            cams_intrinsic_IDs[i] = intrinsic_id;
+            cams_pose_IDs[i] = pose_id;
             img_found[i] = true;
 
-            pose2view[pose_id.GetUint()] = view_id.GetUint();
+            pose2view[pose_id] = view_id;
         }
         else
         {
             // image not found...
             img_found[i] = false;
-            std::cerr << "WARNING: image '" << filename.GetString() << "' not found (ID=" << view_id.GetUint() << ")" << std::endl;
+            std::cerr << "WARNING: image '" << filename << "' not found (ID=" << view_id << ")" << std::endl;
         }
     }
 

@@ -48,7 +48,7 @@ namespace L3DPP
     // matching
     #define L3D_DEF_MATCHING_NEIGHBORS 10
     #define L3D_DEF_EPIPOLAR_OVERLAP 0.25f
-    #define L3D_DEF_MIN_BASELINE 0.10f
+    #define L3D_DEF_MIN_BASELINE 0.01f
     #define L3D_DEF_KNN 10
     #define L3D_DEF_SCORING_POS_REGULARIZER 2.5f
     #define L3D_DEF_SCORING_ANG_REGULARIZER 5.0f
