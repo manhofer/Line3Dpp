@@ -210,6 +210,14 @@ namespace L3DPP
         // none
         size_t numImages(){return views_.size();}
 
+        // L3DPP::DataArray<float4>* detectLineSegments(...): detects line segments in an image
+        // -------------------------------------
+        // PARAMETERS:
+        // -------------------------------------
+        // camID - ID of the given view (for re-loading only)
+        // image - the corresponding image (cv::Mat, CV_8U or CV_8UC3)
+        L3DPP::DataArray<float4>* detectLineSegments(const unsigned int camID, cv::Mat& image);
+
         // --------------------------------------------------
         // helper functions (needed in specific executables):
         // --------------------------------------------------
@@ -227,9 +235,6 @@ namespace L3DPP
 
         // store visual neighbors directly
         void setVisualNeighbors(const unsigned int camID, std::list<unsigned int>& neighbors);
-
-        // detect/load line segments
-        L3DPP::DataArray<float4>* detectLineSegments(const unsigned int camID, cv::Mat& image);
 
         // find visual neighbors
         void findVisualNeighborsFromWPs(const unsigned int camID);
