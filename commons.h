@@ -51,7 +51,7 @@ namespace L3DPP
     #define L3D_DEF_MIN_BASELINE 0.01f
     #define L3D_DEF_KNN 10
     #define L3D_DEF_SCORING_POS_REGULARIZER 2.5f
-    #define L3D_DEF_SCORING_ANG_REGULARIZER 5.0f
+    #define L3D_DEF_SCORING_ANG_REGULARIZER 10.0f
 
     // scoring
     #define L3D_DEF_MIN_SIMILARITY_3D 0.25f
