@@ -15,6 +15,7 @@ namespace L3DPP
         size_t num_cams = views_.size();
 
         double* lines = new double[num_lines * LINE_SIZE];
+        double* tmp_pts = new double[num_lines * 6];
         double* cameras = new double[num_cams * CAM_PARAMETERS_SIZE];
         double* intrinsics = new double[num_cams * INTRINSIC_SIZE];
 
@@ -28,12 +29,50 @@ namespace L3DPP
         for(size_t i=0; i<clusters3D_->size(); ++i)
         {
             L3DPP::LineCluster3D LC = clusters3D_->at(i);
-            lines[i * LINE_SIZE + 0] = LC.seg3D().P1().x();
-            lines[i * LINE_SIZE + 1] = LC.seg3D().P1().y();
-            lines[i * LINE_SIZE + 2] = LC.seg3D().P1().z();
-            lines[i * LINE_SIZE + 3] = LC.seg3D().P2().x();
-            lines[i * LINE_SIZE + 4] = LC.seg3D().P2().y();
-            lines[i * LINE_SIZE + 5] = LC.seg3D().P2().z();
+
+            // convert to Plücker
+            Eigen::Vector3d l = LC.seg3D().P2()-LC.seg3D().P1();
+            l.normalize();
+            Eigen::Vector3d m = (0.5*(LC.seg3D().P1()+LC.seg3D().P2())).cross(l);
+
+            // convert to Cayley
+            Eigen::Matrix3d Q;
+            Eigen::Vector3d e1,e2;
+            if(m.norm() < L3D_EPS)
+            {
+                // compute nullspace of l'
+                Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp(l.transpose());
+                Eigen::MatrixXd e = lu_decomp.kernel();
+
+                e1 = Eigen::Vector3d(e(0,0),e(1,0),e(2,0));
+                e2 = Eigen::Vector3d(e(0,1),e(1,1),e(2,1));
+            }
+            else
+            {
+                e1 = m.normalized();
+                e2 = (l.cross(m)).normalized();
+            }
+
+            Q(0,0) = l(0); Q(0,1) = e1(0); Q(0,2) = e2(0);
+            Q(1,0) = l(1); Q(1,1) = e1(1); Q(1,2) = e2(1);
+            Q(2,0) = l(2); Q(2,1) = e1(2); Q(2,2) = e2(2);
+
+            Eigen::Matrix3d sx = (Q-Eigen::MatrixXd::Identity(3,3))*((Q+Eigen::MatrixXd::Identity(3,3)).inverse());
+
+            Eigen::Vector3d s(sx(2,1),sx(0,2),sx(1,0));
+            double omega = m.norm();
+
+            lines[i * LINE_SIZE + 0] = omega;
+            lines[i * LINE_SIZE + 1] = s(0);
+            lines[i * LINE_SIZE + 2] = s(1);
+            lines[i * LINE_SIZE + 3] = s(2);
+
+            tmp_pts[i * 6 + 0] = LC.seg3D().P1().x();
+            tmp_pts[i * 6 + 1] = LC.seg3D().P1().y();
+            tmp_pts[i * 6 + 2] = LC.seg3D().P1().z();
+            tmp_pts[i * 6 + 3] = LC.seg3D().P2().x();
+            tmp_pts[i * 6 + 4] = LC.seg3D().P2().y();
+            tmp_pts[i * 6 + 5] = LC.seg3D().P2().z();
         }
 
         // cameras & intrinsics
@@ -44,7 +83,7 @@ namespace L3DPP
             // set local ID
             cam_global2local[it->first] = i;
 
-            // camera
+            // camera (rotation and center)
             L3DPP::View* v = it->second;
             Eigen::Matrix3d rot = v->R();
             double rotation[9] =  {rot(0,0), rot(1,0), rot(2,0),
@@ -57,15 +96,20 @@ namespace L3DPP
             cameras[(i*CAM_PARAMETERS_SIZE) + 1] = axis_angle[1];
             cameras[(i*CAM_PARAMETERS_SIZE) + 2] = axis_angle[2];
 
-            cameras[(i*CAM_PARAMETERS_SIZE) + 3] = (v->t())[0];
-            cameras[(i*CAM_PARAMETERS_SIZE) + 4] = (v->t())[1];
-            cameras[(i*CAM_PARAMETERS_SIZE) + 5] = (v->t())[2];
+            cameras[(i*CAM_PARAMETERS_SIZE) + 3] = (v->C())[0];
+            cameras[(i*CAM_PARAMETERS_SIZE) + 4] = (v->C())[1];
+            cameras[(i*CAM_PARAMETERS_SIZE) + 5] = (v->C())[2];
 
-            // intrinsics
-            intrinsics[(i*INTRINSIC_SIZE + 0)] = (v->K())(0,2); //px
-            intrinsics[(i*INTRINSIC_SIZE + 1)] = (v->K())(1,2); //py
-            intrinsics[(i*INTRINSIC_SIZE + 2)] = (v->K())(0,0); //fx
-            intrinsics[(i*INTRINSIC_SIZE + 3)] = (v->K())(1,1); //fy
+            // intrinsics -> cof(K)
+            double fx = (v->K())(0,0);
+            double fy = (v->K())(1,1);
+            double px = (v->K())(0,2);
+            double py = (v->K())(1,2);
+
+            intrinsics[(i*INTRINSIC_SIZE + 0)] = fx;
+            intrinsics[(i*INTRINSIC_SIZE + 1)] = fy;
+            intrinsics[(i*INTRINSIC_SIZE + 2)] = px;
+            intrinsics[(i*INTRINSIC_SIZE + 3)] = py;
         }
 
         // store used camera pointers
@@ -92,12 +136,11 @@ namespace L3DPP
                 Eigen::Vector2d p1(coords.x(),coords.y());
                 Eigen::Vector2d p2(coords.z(),coords.w());
 
-                Eigen::Vector2d dir = p2-p1;
-                dir.normalize();
+                Eigen::Vector2d dir = (p2-p1).normalized();
 
-                cost_function =  // 2 residuals, 6 camera parameter (ext), 6 line parameter
+                cost_function =  // 2 residuals, 6 camera parameters (ext), 4 line parameters
                     new ceres::AutoDiffCostFunction<LineReprojectionError, 2, CAM_PARAMETERS_SIZE, LINE_SIZE, INTRINSIC_SIZE>(
-                            new LineReprojectionError(p1.x(),p1.y(),p2.x(),p2.y(),dir.x(),dir.y()));
+                            new LineReprojectionError(p1.x(),p1.y(),p2.x(),p2.y(),-dir.y(),dir.x()));
                 problem->AddResidualBlock(cost_function,scaled_loss_lines,
                                           cameras + camera_idx*CAM_PARAMETERS_SIZE,
                                           lines + i*LINE_SIZE, intrinsics + camera_idx*INTRINSIC_SIZE);
@@ -105,29 +148,6 @@ namespace L3DPP
                 used_cams[cameras + camera_idx*CAM_PARAMETERS_SIZE] = true;
                 used_intrinsics[intrinsics + camera_idx*INTRINSIC_SIZE] = true;
             }
-
-            // add length constraint
-            L3DPP::Segment2D corr_seg = clusters3D_->at(i).correspondingSeg2D();
-            L3DPP::View* v = views_[corr_seg.camID()];
-            Eigen::Vector4f coords = v->getLineSegment2D(corr_seg.segID());
-            size_t camera_idx = cam_global2local[corr_seg.camID()];
-            double length = (Eigen::Vector2d(coords(0),coords(1))-Eigen::Vector2d(coords(2),coords(3))).norm();
-
-            ceres::LossFunction* loss_function_line_endpoints = new ceres::HuberLoss(LOSS_THRESHOLD);
-            ceres::ScaledLoss* scaled_loss_line_endpoints = new ceres::ScaledLoss(loss_function_line_endpoints,
-                                                                                  1.0,ceres::TAKE_OWNERSHIP);
-
-            ceres::CostFunction* cost_function;
-
-            cost_function =  // 1 residual
-                new ceres::AutoDiffCostFunction<LineLengthConstraint, 1, CAM_PARAMETERS_SIZE, LINE_SIZE, INTRINSIC_SIZE>(
-                        new LineLengthConstraint(length));
-            problem->AddResidualBlock(cost_function,scaled_loss_line_endpoints,
-                                      cameras + camera_idx*CAM_PARAMETERS_SIZE,
-                                      lines + i*LINE_SIZE, intrinsics + camera_idx*INTRINSIC_SIZE);
-
-            used_cams[cameras + camera_idx*CAM_PARAMETERS_SIZE] = true;
-            used_intrinsics[intrinsics + camera_idx*INTRINSIC_SIZE] = true;
         }
 
         // set cameras and intrinsics as constant
@@ -148,7 +168,7 @@ namespace L3DPP
         options.linear_solver_type = ceres::SPARSE_SCHUR;
         options.num_threads = boost::thread::hardware_concurrency();
         options.minimizer_progress_to_stdout = true;
-        options.num_linear_solver_threads =  boost::thread::hardware_concurrency();
+        options.num_linear_solver_threads = boost::thread::hardware_concurrency();
 
         ceres::Solver::Summary summary;
         ceres::Solve(options,problem,&summary);
@@ -161,14 +181,80 @@ namespace L3DPP
         {
             L3DPP::LineCluster3D LC = clusters_copy[i];
 
-            // check bundled line
-            Eigen::Vector3d P1(lines[i * LINE_SIZE + 0],
-                               lines[i * LINE_SIZE + 1],
-                               lines[i * LINE_SIZE + 2]);
-            Eigen::Vector3d P2(lines[i * LINE_SIZE + 3],
-                               lines[i * LINE_SIZE + 4],
-                               lines[i * LINE_SIZE + 5]);
+            // get final Cayley coords
+            double omega = lines[i* LINE_SIZE + 0];
+            Eigen::Vector3d s(lines[i * LINE_SIZE + 1],
+                              lines[i * LINE_SIZE + 2],
+                              lines[i * LINE_SIZE + 3]);
 
+            // get old coords
+            Eigen::Vector3d P1_old(tmp_pts[i * 6 + 0],
+                                   tmp_pts[i * 6 + 1],
+                                   tmp_pts[i * 6 + 2]);
+            Eigen::Vector3d P2_old(tmp_pts[i * 6 + 3],
+                                   tmp_pts[i * 6 + 4],
+                                   tmp_pts[i * 6 + 5]);
+
+            Eigen::Vector3d P1,P2;
+            if(fabs(omega) < L3D_EPS)
+            {
+                // keep original coords
+                P1 = P1_old;
+                P2 = P2_old;
+            }
+            else
+            {
+                // update coords
+                Eigen::Matrix3d sx = Eigen::Matrix3d::Constant(0.0);
+                sx(0,1) = -s.z(); sx(0,2) = s.y();
+                sx(1,0) = s.z();  sx(1,2) = -s.x();
+                sx(2,0) = -s.y(); sx(2,1) = s.x();
+
+                double nm = s.x()*s.x()+s.y()*s.y()+s.z()*s.z();
+                Eigen::Matrix3d Q = 1.0/(1.0+nm) * ((1.0-nm)*Eigen::Matrix3d::Identity() + 2.0*sx + 2.0*s*s.transpose());
+
+                Eigen::Vector3d l(Q(0,0),Q(1,0),Q(2,0));
+                Eigen::Vector3d m(Q(0,1),Q(1,1),Q(2,1));
+                m *= omega;
+
+                // convert back to P1,P2
+                if(fabs(l.x()) > L3D_EPS || fabs(l.y()) > L3D_EPS || fabs(l.z()) > L3D_EPS)
+                {
+                    Eigen::Vector3d Pm = 0.5*(P1_old+P2_old);
+
+                    double x1,x2,x3;
+                    if(fabs(l.x()) > fabs(l.y()) && fabs(l.x()) > fabs(l.z()))
+                    {
+                        x1 = Pm.x();
+                        x3 = (-m.y()-x1*l.z())/-l.x();
+                        x2 = (m.z()-x1*l.y())/-l.x();
+                    }
+                    else if(fabs(l.y()) > fabs(l.x()) && fabs(l.y()) > fabs(l.z()))
+                    {
+                        x2 = Pm.y();
+                        x3 = (m.x()-x2*l.z())/-l.y();
+                        x1 = (m.z()+x2*l.x())/l.y();
+                    }
+                    else
+                    {
+                        x3 = Pm.z();
+                        x2 = (m.x()+x3*l.y())/l.z();
+                        x1 = (-m.y()+x3*l.x())/l.z();
+                    }
+
+                    Pm = Eigen::Vector3d(x1,x2,x3);
+                    P1 = Pm+l;
+                    P2 = Pm-l;
+                }
+                else
+                {
+                    // numerically unstable... keep unoptimized
+                    P1 = P1_old;
+                    P2 = P2_old;
+                }
+            }
+
+            // check length
             if((P1-P2).norm() > L3D_EPS)
             {
                 // still valid
@@ -179,6 +265,7 @@ namespace L3DPP
 
         // cleanup
         delete lines;
+        delete tmp_pts;
         delete cameras;
         delete intrinsics;
         delete problem;
