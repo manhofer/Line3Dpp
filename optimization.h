@@ -115,10 +115,10 @@ namespace L3DPP
             ceres::AngleAxisRotatePoint(camera, m, q);
 
             // project to image
-            const T& px    = intrinsic[2];
-            const T& py    = intrinsic[3];
-            const T& fx    = intrinsic[0];
-            const T& fy    = intrinsic[1];
+            const T& px    = intrinsic[0];
+            const T& py    = intrinsic[1];
+            const T& fx    = intrinsic[2];
+            const T& fy    = intrinsic[3];
 
             T proj_l[3];
             proj_l[0] = fy*q[0];

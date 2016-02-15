@@ -106,10 +106,10 @@ namespace L3DPP
             double px = (v->K())(0,2);
             double py = (v->K())(1,2);
 
-            intrinsics[(i*INTRINSIC_SIZE + 0)] = fx;
-            intrinsics[(i*INTRINSIC_SIZE + 1)] = fy;
-            intrinsics[(i*INTRINSIC_SIZE + 2)] = px;
-            intrinsics[(i*INTRINSIC_SIZE + 3)] = py;
+            intrinsics[(i*INTRINSIC_SIZE + 0)] = px;
+            intrinsics[(i*INTRINSIC_SIZE + 1)] = py;
+            intrinsics[(i*INTRINSIC_SIZE + 2)] = fx;
+            intrinsics[(i*INTRINSIC_SIZE + 3)] = fy;
         }
 
         // store used camera pointers

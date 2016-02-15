@@ -102,16 +102,16 @@ namespace L3DPP
     public:
         LineCluster3D(){}
         LineCluster3D(L3DPP::Segment3D seg3D,
-                      L3DPP::Segment2D correspondingSeg2D,
-                      std::list<L3DPP::Segment2D> residuals) :
-            seg3D_(seg3D), correspondingSeg2D_(correspondingSeg2D),
-            residuals_(residuals){}
+                      std::list<L3DPP::Segment2D> residuals,
+                      const unsigned int ref_view) :
+            seg3D_(seg3D), residuals_(residuals),
+            reference_view_(ref_view){}
 
         // data access
         L3DPP::Segment3D seg3D() const {return seg3D_;}
-        L3DPP::Segment2D correspondingSeg2D() const {return correspondingSeg2D_;}
         std::list<L3DPP::Segment2D>* residuals(){return &residuals_;}
         size_t size(){return residuals_.size();}
+        unsigned int reference_view(){return reference_view_;}
 
         // update 3D line (after bundling)
         void update3Dline(L3DPP::Segment3D seg3D){
@@ -120,8 +120,8 @@ namespace L3DPP
 
     private:
         L3DPP::Segment3D seg3D_;
-        L3DPP::Segment2D correspondingSeg2D_;
         std::list<L3DPP::Segment2D> residuals_;
+        unsigned int reference_view_;
     };
 
     //------------------------------------------------------------------------------

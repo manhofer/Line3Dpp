@@ -1954,8 +1954,8 @@ namespace L3DPP
         Eigen::MatrixXd L_points(3,n);
 
         std::list<L3DPP::Segment2D>::iterator it = cluster.begin();
-        float max_len = 0.0f;
-        L3DPP::Segment2D correspondingSeg2D;
+        unsigned int reference_cam = 0;
+        float max_len_2D = 0.0f;
         for(size_t i=0; it!=cluster.end(); ++it,i+=2)
         {
             // get 3D hypothesis
@@ -1973,11 +1973,13 @@ namespace L3DPP
             L_points(1,i+1) = hyp3D.P2().y();
             L_points(2,i+1) = hyp3D.P2().z();
 
-            // corresponding 2D segment -> longest 3D hyp
-            if(hyp3D.length() > max_len)
+            // check 2D length -> max length defines reference view (for filtering later on)
+            Eigen::Vector4f coords = views_[(*it).camID()]->getLineSegment2D((*it).segID());
+            float length_sqr = (coords(0)-coords(2))*(coords(0)-coords(2)) + (coords(1)-coords(3))*(coords(1)-coords(3));
+            if(length_sqr > max_len_2D)
             {
-                max_len = hyp3D.length();
-                correspondingSeg2D = *it;
+                max_len_2D = length_sqr;
+                reference_cam = (*it).camID();
             }
         }
 
@@ -2002,21 +2004,10 @@ namespace L3DPP
         Eigen::Vector3d dir = Eigen::Vector3d(U(0, maxPos), U(1, maxPos), U(2, maxPos));
         dir.normalize();
 
-        // initial 3D line
-        L3DPP::Segment3D initial3Dline(P,P+dir);
+        // initial 3D line for cluster
+        L3DPP::Segment3D initial3Dline(P-dir,P+dir);
+        L3DPP::LineCluster3D LC = L3DPP::LineCluster3D(initial3Dline,cluster,reference_cam);
 
-        // project corresponding segment
-        bool success;
-        L3DPP::Segment3D clusterLine = project2DsegmentOnto3Dline(correspondingSeg2D,
-                                                                  initial3Dline,success);
-
-        L3DPP::LineCluster3D LC;
-        if(success)
-        {
-            // projection successfull
-            LC = L3DPP::LineCluster3D(clusterLine,correspondingSeg2D,
-                                      cluster);
-        }
         return LC;
     }
 
@@ -2116,7 +2107,8 @@ namespace L3DPP
         for(size_t i=0; i<lines3D_.size(); ++i)
         {
             L3DPP::FinalLine3D L = lines3D_[i];
-            L3DPP::View* v = views_[L.underlyingCluster_.correspondingSeg2D().camID()];
+
+            L3DPP::View* v = views_[L.underlyingCluster_.reference_view()];
 
             std::list<L3DPP::Segment3D> filteredSegments;
             std::list<L3DPP::Segment3D>::iterator it = L.collinear3Dsegments_.begin();
