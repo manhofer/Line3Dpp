@@ -137,9 +137,9 @@ namespace L3DPP
             }
 
             // angle constraint
+            T aw = T(1.0);
             T dx = proj_l[0];
             T dy = proj_l[1];
-            T aw = T(1.0);
 
             if(d > 1e-12)
             {
@@ -172,83 +172,6 @@ namespace L3DPP
         double observed_pt2_y_;
         double observed_norm_dir_x_;
         double observed_norm_dir_y_;
-    };
-
-    // length constraint for line bundling
-    struct LineLengthConstraint
-    {
-        LineLengthConstraint(double observed_len):
-            observed_len_(observed_len)
-        {}
-
-        template <typename T>
-        bool operator()(const T* const camera,
-                        const T* const line,
-                        const T* const intrinsic,
-                        T* residuals) const
-        {
-            // Translate into camera coordinate system
-            T Q1[3];
-            T Q2[3];
-
-            Q1[0] = line[0]; Q1[1] = line[1]; Q1[2] = line[2];
-            Q2[0] = line[3]; Q2[1] = line[4]; Q2[2] = line[5];
-
-            T q1[3],q2[3];
-            ceres::AngleAxisRotatePoint(camera, Q1, q1);
-            ceres::AngleAxisRotatePoint(camera, Q2, q2);
-
-            q1[0] += camera[3];
-            q1[1] += camera[4];
-            q1[2] += camera[5];
-
-            q2[0] += camera[3];
-            q2[1] += camera[4];
-            q2[2] += camera[5];
-
-            const T& px    = intrinsic[0];
-            const T& py    = intrinsic[1];
-            const T& fx    = intrinsic[2];
-            const T& fy    = intrinsic[3];
-
-            T x1n = (1.0 * q1[0] + 0.0 * q1[2]) / q1[2];
-            T y1n = (1.0 * q1[1] + 0.0 * q1[2]) / q1[2];
-
-            T x2n = (1.0 * q2[0] + 0.0 * q2[2]) / q2[2];
-            T y2n = (1.0 * q2[1] + 0.0 * q2[2]) / q2[2];
-
-            T xd1 = x1n;
-            T yd1 = y1n;
-
-            T xd2 = x2n;
-            T yd2 = y2n;
-
-            // projection function
-            q1[0] = xd1;
-            q1[1] = yd1;
-
-            q2[0] = xd2;
-            q2[1] = yd2;
-
-            // projection function
-            q1[0] = (fx * q1[0] + px);
-            q1[1] = (fy * q1[1] + py);
-
-            q2[0] = (fx * q2[0] + px);
-            q2[1] = (fy * q2[1] + py);
-
-            // length of backproj. segment
-            T dx = q2[0]-q1[0];
-            T dy = q2[1]-q1[1];
-            T len = ceres::sqrt(dx*dx+dy*dy);
-
-            residuals[0] = len-T(observed_len_);
-
-            return true;
-        }
-
-    private:
-        double observed_len_;
     };
 
     // optimizer using CERES

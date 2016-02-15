@@ -35,7 +35,7 @@ namespace L3DPP
             l.normalize();
             Eigen::Vector3d m = (0.5*(LC.seg3D().P1()+LC.seg3D().P2())).cross(l);
 
-            // convert to Cayley
+            // convert to Cayley [Zhang and Koch, J. Vis. Commun. Image R., 2014]
             Eigen::Matrix3d Q;
             Eigen::Vector3d e1,e2;
             if(m.norm() < L3D_EPS)
@@ -131,7 +131,7 @@ namespace L3DPP
 
                 ceres::CostFunction* cost_function;
 
-                // line equation
+                // 2D line points and direction
                 Eigen::Vector4f coords = v->getLineSegment2D(seg2D.segID());
                 Eigen::Vector2d p1(coords.x(),coords.y());
                 Eigen::Vector2d p2(coords.z(),coords.w());
@@ -140,7 +140,7 @@ namespace L3DPP
 
                 cost_function =  // 2 residuals, 6 camera parameters (ext), 4 line parameters
                     new ceres::AutoDiffCostFunction<LineReprojectionError, 2, CAM_PARAMETERS_SIZE, LINE_SIZE, INTRINSIC_SIZE>(
-                            new LineReprojectionError(p1.x(),p1.y(),p2.x(),p2.y(),-dir.y(),dir.x()));
+                            new LineReprojectionError(p1.x(),p1.y(),p2.x(),p2.y(),-dir.y(),dir.x())); // direction as normal vector!
                 problem->AddResidualBlock(cost_function,scaled_loss_lines,
                                           cameras + camera_idx*CAM_PARAMETERS_SIZE,
                                           lines + i*LINE_SIZE, intrinsics + camera_idx*INTRINSIC_SIZE);
