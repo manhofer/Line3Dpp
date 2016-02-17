@@ -246,7 +246,7 @@ Our algorithm uses three external components, which are integrated into the sour
 **[Graph-based Segmentation](http://cs.brown.edu/~pff/segment/):**
 
 	Efficient Graph-based Image Segmentation,
-	P. Fezenszwalb, F. Huttenlocher,
+	P. Felzenszwalb, D. Huttenlocher,
 	International Journal of Computer Vision (IJCV), 2004.
 
 **[Replicator Dynamics Diffusion](http://vh.icg.tugraz.at/index.php?content=topics/rgcclustering.php):**

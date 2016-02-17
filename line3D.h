@@ -353,6 +353,8 @@ namespace L3DPP
         std::vector<unsigned int> view_order_;
         std::map<unsigned int,L3DPP::View*> views_;
         std::map<unsigned int,bool> views_reserved_;
+        std::vector<float> views_avg_depths_;
+        float med_scene_depth_;
 
         // neighbors
         bool neighbors_by_worldpoints_;

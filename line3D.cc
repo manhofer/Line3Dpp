@@ -16,6 +16,7 @@ namespace L3DPP
         load_segments_ = load_segments;
         neighbors_by_worldpoints_ = neighbors_by_worldpoints;
         num_lines_total_ = 0;
+        med_scene_depth_ = L3D_EPS;
 
         // default
         collinearity_t_ = L3D_DEF_COLLINEARITY_T;
@@ -198,6 +199,7 @@ namespace L3DPP
         processed_[camID] = false;
         visual_neighbors_[camID] = std::map<unsigned int,bool>();
         num_lines_total_ += lines->width();
+        views_avg_depths_.push_back(fmax(fabs(median_depth),L3D_EPS));
 
         if(neighbors_by_worldpoints_)
         {
@@ -409,6 +411,14 @@ namespace L3DPP
         else
             std::cout << prefix_ << "computing spatial regularizers... [" << sigma_p_ << " m]" << std::endl;
 
+        med_scene_depth_ = L3D_EPS;
+        if(fixed3Dregularizer_ && views_avg_depths_.size() > 0)
+        {
+            // compute median scene depth
+            std::sort(views_avg_depths_.begin(),views_avg_depths_.end());
+            med_scene_depth_ = views_avg_depths_[views_avg_depths_.size()/2];
+        }
+
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
@@ -419,7 +429,7 @@ namespace L3DPP
             if(!fixed3Dregularizer_)
                 views_[camID]->computeSpatialRegularizer(sigma_p_);
             else
-                views_[camID]->update_k(sigma_p_);
+                views_[camID]->update_k(sigma_p_,med_scene_depth_);
 
             // reset matches
             matches_[camID] = std::vector<std::list<L3DPP::Match> >(views_[camID]->num_lines());
@@ -1274,65 +1284,6 @@ namespace L3DPP
         L3DPP::View* v1 = views_[m1.src_camID_];
         L3DPP::View* v2 = views_[m2.src_camID_];
 
-        /*
-        // positional similarity
-        Eigen::Vector3d p[2],q[2];
-        p[0] = s1.P1(); p[1] = s1.P2();
-        q[0] = s2.P1(); q[1] = s2.P2();
-        float depth1 = 0.0f;
-        float depth2 = 0.0f;
-        Eigen::Vector3d lps[2];
-        float max_dist = 0.0f;
-        Eigen::Vector3d pts[2];
-
-        for(size_t i=0; i<2; ++i)
-        {
-            for(size_t j=0; j<2; ++j)
-            {
-                float d = (p[i]-q[j]).norm();
-                if(d > max_dist)
-                {
-                    max_dist = d;
-                    lps[0] = p[i]; lps[1] = q[j];
-                    pts[0] = p[1-i]; pts[1] = q[1-j];
-                    depth1 = (v1->C()-pts[0]).norm();
-                    depth2 = (v2->C()-pts[1]).norm();
-                }
-            }
-        }
-
-        L3DPP::Segment3D line(lps[0],lps[1]);
-        if(line.length() < L3D_EPS)
-            return 0.0f;
-
-        float d1 = line.distance_Point2Line(pts[0]);
-        float d2 = line.distance_Point2Line(pts[1]);
-
-        float reg1,reg2;
-        float sig1;
-        if(depth1 > v1->median_depth())
-            sig1 = v1->median_sigma();
-        else
-            sig1 = depth1*v1->k();
-
-        float sig2;
-        if(depth2 > v2->median_depth())
-            sig2 = v2->median_sigma();
-        else
-            sig2 = depth2*v2->k();
-
-        reg1 = 2.0f*sig1*sig1;
-        reg2 = 2.0f*sig2*sig2;
-
-        float sim_p = fmin(expf(-d1*d1/reg1),expf(-d2*d2/reg2));
-
-        // angular similarity
-        float angle1 = angleBetweenSeg3D(line,s1,true);
-        float angle2 = angleBetweenSeg3D(line,s2,true);
-        float sim_a = fmin(expf(-angle1*angle1/two_sigA_sqr_),
-                           expf(-angle2*angle2/two_sigA_sqr_));
-        */
-
         // angular similarity
         float angle = angleBetweenSeg3D(s1,s2,true);
         float sim_a = expf(-angle*angle/two_sigA_sqr_);
@@ -1481,9 +1432,9 @@ namespace L3DPP
         }
 
         if(!fixed3Dregularizer_)
-            views_[src]->update_median_depth(med_depth,-1.0f);
+            views_[src]->update_median_depth(med_depth,-1.0f,med_scene_depth_);
         else
-            views_[src]->update_median_depth(med_depth,sigma_p_);
+            views_[src]->update_median_depth(med_depth,sigma_p_,med_scene_depth_);
     }
 
     //------------------------------------------------------------------------------

@@ -106,23 +106,24 @@ namespace L3DPP
 
         // set new regularization depth
         void update_median_depth(const float d,
-                                 const float sigmaP)
+                                 const float sigmaP,
+                                 const float med_scene_depth)
         {
             median_depth_ = d;
 
             if(sigmaP > 0.0f)
             {
                 // fixed sigma
-                k_ = sigmaP/median_depth_;
+                k_ = sigmaP/med_scene_depth;
             }
 
             median_sigma_ = k_*median_depth_;
         }
 
         // compute k when fixed sigmaP is used
-        void update_k(const float sigmaP)
+        void update_k(const float sigmaP, const float med_scene_depth)
         {
-            k_ = sigmaP/initial_median_depth_;
+            k_ = sigmaP/med_scene_depth;
         }
 
         // get coordinates of a specific line segment
