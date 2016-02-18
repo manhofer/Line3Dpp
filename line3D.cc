@@ -364,7 +364,7 @@ namespace L3DPP
                              const unsigned int num_neighbors, const float epipolar_overlap,
                              const float min_baseline, const int kNN)
     {
-        // new views can be added in the meantime!
+        // no new views can be added in the meantime!
         view_reserve_mutex_.lock();
         view_mutex_.lock();
 
