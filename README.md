@@ -230,7 +230,7 @@ The `.txt` file contains the reconstructed 3D lines and their visibility informa
 	n P1x P1y P1z Q1x Q1y Q1z ... Pnx Pny Pnz Qnx Qny Qnz m camID1 segID1 p1x p1y q1x q1y ... camIDm segIDm pmx pmy qmx qmy
 
 The first `n` stands for the number of 3D segments on the 3D line. It is followed by the coordinates of the start- (`P`) and endpoints (`Q`) of these 3D segments.
-The `m` stands for the number of 2D residuals. It is followed by the camera ID, segment ID and the 2D coordinates of the segments.
+The `m` stands for the number of 2D residuals. It is followed by the camera ID, segment ID and the 2D coordinates of the segments (**Note:** the 2D coordinates refer to the **undistorted** images).
 
 Disclaimer
 ==========
