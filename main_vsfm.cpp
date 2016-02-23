@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
     TCLAP::CmdLine cmd("LINE3D++");
 
-    TCLAP::ValueArg<std::string> inputArg("i", "input_folder", "folder containing the images", true, ".", "string");
+    TCLAP::ValueArg<std::string> inputArg("i", "input_folder", "folder containing the images (if not specified, path in .nvm file is expected to be correct)", false, "", "string");
     cmd.add(inputArg);
 
     TCLAP::ValueArg<std::string> nvmArg("m", "nvm_file", "full path to the VisualSfM result file (.nvm)", true, ".", "string");
@@ -108,6 +108,23 @@ int main(int argc, char *argv[])
     cmd.parse(argc,argv);
     std::string inputFolder = inputArg.getValue().c_str();
     std::string nvmFile = nvmArg.getValue().c_str();
+
+    // check if NVM file exists
+    boost::filesystem::path nvm(nvmFile);
+    if(!boost::filesystem::exists(nvm))
+    {
+        std::cerr << "NVM file " << nvmFile << " does not exist!" << std::endl;
+        return -1;
+    }
+
+    bool use_full_image_path = false;
+    if(inputFolder.length() == 0)
+    {
+        // parse input folder from .nvm file
+        use_full_image_path = true;
+        inputFolder = nvm.parent_path().string();
+    }
+
     std::string outputFolder = outputArg.getValue().c_str();
     if(outputFolder.length() == 0)
         outputFolder = inputFolder+"/Line3D++/";
@@ -127,14 +144,6 @@ int main(int argc, char *argv[])
     unsigned int maxNumSegments = segNumArg.getValue();
     unsigned int visibility_t = visibilityArg.getValue();
     float constRegDepth = constRegDepthArg.getValue();
-
-    // check if NVM file exists
-    boost::filesystem::path nvm(nvmFile);
-    if(!boost::filesystem::exists(nvm))
-    {
-        std::cerr << "NVM file " << nvmFile << " does not exist!" << std::endl;
-        return -1;
-    }
 
     // create output directory
     boost::filesystem::path dir(outputFolder);
@@ -261,8 +270,16 @@ int main(int argc, char *argv[])
     {
         if(cams_worldpointDepths[i].size() > 0)
         {
+            // parse filename
+            std::string fname = cams_imgFilenames[i];
+            boost::filesystem::path img_path(fname);
+
             // load image
-            cv::Mat image = cv::imread(inputFolder+"/"+cams_imgFilenames[i]);
+            cv::Mat image;
+            if(use_full_image_path)
+                image = cv::imread(inputFolder+"/"+fname.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
+            else
+                image = cv::imread(inputFolder+"/"+img_path.filename().c_str(),CV_LOAD_IMAGE_GRAYSCALE);
 
             // setup intrinsics
             float px = float(image.cols)/2.0f;

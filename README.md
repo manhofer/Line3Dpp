@@ -147,7 +147,7 @@ work slightly different, and have non-standardized output formats, the call of t
 
 This executable reads VisualSfM results in the form of an `.nvm` file (parameter `-m` below).
 
-	./runLine3Dpp_vsfm -i <image_folder> -m <full_path_to_nvm_file>
+	./runLine3Dpp_vsfm -m <full_path_to_nvm_file> [-i <image_folder>] 
 
 ### bundler
 
