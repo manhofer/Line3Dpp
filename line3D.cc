@@ -26,6 +26,7 @@ namespace L3DPP
         kNN_ = L3D_DEF_KNN;
         sigma_p_ = L3D_DEF_SCORING_POS_REGULARIZER;
         sigma_a_ = L3D_DEF_SCORING_ANG_REGULARIZER;
+        const_regularization_depth_ = -1.0f;
         two_sigA_sqr_ = 2.0f*sigma_a_*sigma_a_;
         perform_RDD_ = false;
         use_CERES_ = false;
@@ -362,7 +363,8 @@ namespace L3DPP
     //------------------------------------------------------------------------------
     void Line3D::matchImages(const float sigma_position, const float sigma_angle,
                              const unsigned int num_neighbors, const float epipolar_overlap,
-                             const float min_baseline, const int kNN)
+                             const float min_baseline, const int kNN,
+                             const float const_regularization_depth)
     {
         // no new views can be added in the meantime!
         view_reserve_mutex_.lock();
@@ -386,6 +388,7 @@ namespace L3DPP
         min_baseline_ = fmax(min_baseline,0.0f);
         epipolar_overlap_ = fmin(fabs(epipolar_overlap),0.99f);
         kNN_ = kNN;
+        const_regularization_depth_ = const_regularization_depth;
 
         if(sigma_p_ < 0.0f)
         {
@@ -411,8 +414,8 @@ namespace L3DPP
         else
             std::cout << prefix_ << "computing spatial regularizers... [" << sigma_p_ << " m]" << std::endl;
 
-        med_scene_depth_ = L3D_EPS;
-        if(fixed3Dregularizer_ && views_avg_depths_.size() > 0)
+        med_scene_depth_ = const_regularization_depth_;
+        if(const_regularization_depth_ < 0.0f && fixed3Dregularizer_ && views_avg_depths_.size() > 0)
         {
             // compute median scene depth
             std::sort(views_avg_depths_.begin(),views_avg_depths_.end());
@@ -2477,7 +2480,12 @@ namespace L3DPP
             str << "COLLIN_" << collinearity_t_ << "__";
 
         if(fixed3Dregularizer_)
+        {
             str << "FXD_SIGMA_P__";
+
+            if(const_regularization_depth_ > 0.0f)
+                str << "REG_DEPTH_" << const_regularization_depth_ << "__";
+        }
 
         if(perform_RDD_)
             str << "DIFFUSION__";

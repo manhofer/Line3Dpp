@@ -55,9 +55,6 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<std::string> mavmapArg("b", "mavmap_output", "full path to the mavmap output (image-data-*.txt)", true, "", "string");
     cmd.add(mavmapArg);
 
-    TCLAP::ValueArg<float> medDepthArg("m", "median_reg_depth", "regularization depth (if sigma_p in world coordinates)", false, -1.0f, "float");
-    cmd.add(medDepthArg);
-
     TCLAP::ValueArg<std::string> extArg("t", "image_extension", "image extension (case sensitive), if not specified: jpg, png or bmp expected", false, "", "string");
     cmd.add(extArg);
 
@@ -109,6 +106,9 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<float> minBaselineArg("x", "min_image_baseline", "minimum baseline between matching images (world space)", false, L3D_DEF_MIN_BASELINE, "float");
     cmd.add(minBaselineArg);
 
+    TCLAP::ValueArg<float> constRegDepthArg("z", "const_reg_depth", "use a constant regularization depth (only when sigma_p is metric!)", false, -1.0f, "float");
+    cmd.add(constRegDepthArg);
+
     // read arguments
     cmd.parse(argc,argv);
     std::string inputFolder = inputArg.getValue().c_str();
@@ -133,17 +133,16 @@ int main(int argc, char *argv[])
     int kNN = knnArg.getValue();
     unsigned int maxNumSegments = segNumArg.getValue();
     unsigned int visibility_t = visibilityArg.getValue();
-    float medianDepth = medDepthArg.getValue();
+    float constRegDepth = constRegDepthArg.getValue();
 
     // since no median depth can be computed without camera-to-worldpoint links
     // sigma_p MUST be positive and in pixels!
-    if(sigmaP < L3D_EPS && medianDepth < L3D_EPS)
+    if(sigmaP < L3D_EPS && constRegDepth < L3D_EPS)
     {
-        std::cout << "sigma_p cannot be negative (i.e. in world coordiantes) when no valid regularization depth (--median_reg_depth) is given!" << std::endl;
+        std::cout << "sigma_p cannot be negative (i.e. in world coordiantes) when no valid regularization depth (--const_reg_depth) is given!" << std::endl;
         std::cout << "reverting to: sigma_p = 2.5px" << std::endl;
         sigmaP = 2.5f;
     }
-    medianDepth = fabs(medianDepth);
 
     // check if mavmap file exists
     boost::filesystem::path bf(mavmapFile);
@@ -336,13 +335,13 @@ int main(int argc, char *argv[])
 
             // add to system
             Line3D->addImage(i,image,K,cams_rotation[i],
-                             cams_translation[i],medianDepth,neighbor_list);
+                             cams_translation[i],constRegDepth,neighbor_list);
         }
     }
 
     // match images
     Line3D->matchImages(sigmaP,sigmaA,neighbors,epipolarOverlap,
-                        minBaseline,kNN);
+                        minBaseline,kNN,constRegDepth);
 
     // compute result
     Line3D->reconstruct3Dlines(visibility_t,diffusion,collinearity,useCERES);

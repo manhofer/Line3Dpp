@@ -99,6 +99,9 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<float> minBaselineArg("x", "min_image_baseline", "minimum baseline between matching images (world space)", false, L3D_DEF_MIN_BASELINE, "float");
     cmd.add(minBaselineArg);
 
+    TCLAP::ValueArg<float> constRegDepthArg("z", "const_reg_depth", "use a constant regularization depth (only when sigma_p is metric!)", false, -1.0f, "float");
+    cmd.add(constRegDepthArg);
+
     // read arguments
     cmd.parse(argc,argv);
     std::string inputFolder = inputArg.getValue().c_str();
@@ -122,6 +125,7 @@ int main(int argc, char *argv[])
     int kNN = knnArg.getValue();
     unsigned int maxNumSegments = segNumArg.getValue();
     unsigned int visibility_t = visibilityArg.getValue();
+    float constRegDepth = constRegDepthArg.getValue();
 
     // check if bundle.rd.out exists
     boost::filesystem::path bf(bundleFile);
@@ -345,7 +349,7 @@ int main(int argc, char *argv[])
 
     // match images
     Line3D->matchImages(sigmaP,sigmaA,neighbors,epipolarOverlap,
-                        minBaseline,kNN);
+                        minBaseline,kNN,constRegDepth);
 
     // compute result
     Line3D->reconstruct3Dlines(visibility_t,diffusion,collinearity,useCERES);

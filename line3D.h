@@ -135,25 +135,29 @@ namespace L3DPP
         // -------------------------------------
         // PARAMETERS:
         // -------------------------------------
-        // sigma_position   - spatial regularizer (for scoring and clustering)
-        //                    if > 0 -> in pixels (regularizer derived from image space and unprojected into 3D space) [scale invariant]
-        //                    if < 0 -> in "meters" (regularizer directly defined in world coordinates) [not scale invariant]
-        //                    the second method is recommended when the scale is known!
-        // sigma_angle      - angular regularizer (for scoring and clustering)
-        //                    defined in degrees (not radiants!)
-        // num_neighbors    - number of neighboring images with which each image is matched
-        // epipolar_overlap - minimum overlap of a line segment with the epipolar beam of another segment,
-        //                    to be considered a potential match (in [0,1])
-        // min_baseline     - minimum baseline between two images for matching (in world-coordinates!)
-        // kNN              - k-nearest-neighbor matching
-        //                    if > 0  -> keep only the k matches with the highest epipolar overlap (per image)
-        //                    if <= 0 -> keep all matches that fulfill the epipolar_overlap
+        // sigma_position             - spatial regularizer (for scoring and clustering)
+        //                              if > 0 -> in pixels (regularizer derived from image space and unprojected into 3D space) [scale invariant]
+        //                              if < 0 -> in "meters" (regularizer directly defined in world coordinates) [not scale invariant]
+        //                              the second method is recommended when the scale is known!
+        // sigma_angle                - angular regularizer (for scoring and clustering)
+        //                              defined in degrees (not radiants!)
+        // num_neighbors              - number of neighboring images with which each image is matched
+        // epipolar_overlap           - minimum overlap of a line segment with the epipolar beam of another segment,
+        //                              to be considered a potential match (in [0,1])
+        // min_baseline               - minimum baseline between two images for matching (in world-coordinates!)
+        // kNN                        - k-nearest-neighbor matching
+        //                              if > 0  -> keep only the k matches with the highest epipolar overlap (per image)
+        //                              if <= 0 -> keep all matches that fulfill the epipolar_overlap
+        // const_regularization_depth - if positive (and sigma_position is in "meters"), this depth is where
+        //                              an uncertainty of 'sigma_position' is allowed (e.g. use 5.0 when you want to
+        //                              initialize sigma_p 5 meters in front of the camera)
         void matchImages(const float sigma_position=L3D_DEF_SCORING_POS_REGULARIZER,
                          const float sigma_angle=L3D_DEF_SCORING_ANG_REGULARIZER,
                          const unsigned int num_neighbors=L3D_DEF_MATCHING_NEIGHBORS,
                          const float epipolar_overlap=L3D_DEF_EPIPOLAR_OVERLAP,
                          const float min_baseline=L3D_DEF_MIN_BASELINE,
-                         const int kNN=L3D_DEF_KNN);
+                         const int kNN=L3D_DEF_KNN,
+                         const float const_regularization_depth=-1.0f);
 
         // void reconstruct3Dlines(...): reconstruct a line-based 3D model (after matching)
         // -------------------------------------
@@ -385,6 +389,7 @@ namespace L3DPP
         float sigma_a_;
         float two_sigA_sqr_;
         bool fixed3Dregularizer_;
+        float const_regularization_depth_;
 
         // reconstruction
         bool perform_RDD_;

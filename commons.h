@@ -54,8 +54,8 @@ namespace L3DPP
     #define L3D_DEF_SCORING_ANG_REGULARIZER 10.0f
 
     // scoring
-    #define L3D_DEF_MIN_SIMILARITY_3D 0.25f
-    #define L3D_DEF_MIN_SCORE_3D 0.5f
+    #define L3D_DEF_MIN_SIMILARITY_3D 0.50f
+    #define L3D_DEF_MIN_SCORE_3D 1.0f
     #define L3D_DEF_MIN_BEST_SCORE_3D 1.0f
 
     // replicator dynamics diffusion
@@ -63,7 +63,7 @@ namespace L3DPP
     #define L3D_DEF_RDD_MAX_ITER 10
 
     // clustering
-    #define L3D_DEF_MIN_AFFINITY 0.25f
+    #define L3D_DEF_MIN_AFFINITY 0.50f
     #define L3D_DEF_MIN_VISIBILITY_T 3
 
     // optimization
