@@ -91,12 +91,16 @@ namespace L3DPP
 
         // projects a 3D point into image
         Eigen::Vector2d project(const Eigen::Vector3d P);
+        Eigen::Vector3d projectWithCheck(const Eigen::Vector3d P);
 
         // get optical axis
         Eigen::Vector3d getOpticalAxis();
 
         // angle between views
         double opticalAxesAngle(L3DPP::View* v);
+
+        // computes a projective visual neighbor score (to ensure bigger baselines)
+        unsigned int projectiveVisualNeighborScore(L3DPP::View* v);
 
         // baseline between views
         float baseLine(L3DPP::View* v);
@@ -191,6 +195,11 @@ namespace L3DPP
         unsigned int height_;
         float diagonal_;
         float min_line_length_;
+
+        // camera plane
+        Eigen::Vector3d plane_n_;
+        float width_1_3_;
+        float height_1_3_;
 
         // regularizer
         float k_;

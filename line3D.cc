@@ -530,9 +530,10 @@ namespace L3DPP
                 vn.camID_ = vID;
                 vn.score_ = 2.0f*float(num_common_wps)/float(num_worldpoints_[camID]+num_worldpoints_[vID]);
                 vn.axisAngle_ = v->opticalAxesAngle(views_[vID]);
+                vn.projective_score_ = v->projectiveVisualNeighborScore(views_[vID]);
 
                 // check baseline
-                if(vn.axisAngle_ < 1.571f) // ~ PI/2
+                if(vn.axisAngle_ < 1.571f && num_common_wps > 3) // ~ PI/2
                 {
                     neighbors.push_back(vn);
                 }
@@ -541,39 +542,36 @@ namespace L3DPP
             // sort by score
             neighbors.sort(L3DPP::sortVisualNeighborsByScore);
 
-            /*
-            std::list<L3DPP::VisualNeighbor> wide_baseline = neighbors;
-            if(wide_baseline.size() > 2*num_neighbors_)
-                wide_baseline.resize(2*num_neighbors_);
-
-            // sort by angle
-            wide_baseline.sort(L3DPP::sortVisualNeighborsByAngle);
-
-            // wide baseline neighbors -> store in visual neighbor map
-            std::list<L3DPP::VisualNeighbor>::iterator nit = wide_baseline.begin();
-            while(nit!=wide_baseline.end() && used_neighbors.size() < num_neighbors_/2)
+            // reduce to best neighbors
+            unsigned int min_limit = num_neighbors_ + num_neighbors_/2;
+            if(neighbors.size() > min_limit)
             {
-                L3DPP::VisualNeighbor vn = *nit;
-                L3DPP::View* v2 = views_[vn.camID_];
+                // copy neighbors
+                std::list<L3DPP::VisualNeighbor> neighbors_tmp = neighbors;
 
-                // check baseline
-                if(v->baseLine(v2) > min_baseline_)
+                // get max score
+                float score_t = 0.70f*neighbors.front().score_;
+                unsigned int num_bigger_t = 0;
+
+                // count the number of highly similar views
+                std::list<L3DPP::VisualNeighbor>::iterator nit = neighbors.begin();
+                while(nit!=neighbors.end() && (*nit).score_ > score_t)
                 {
-                    std::map<unsigned int,bool>::iterator u_it = used_neighbors.begin();
-                    bool valid = true;
-                    for(; u_it!=used_neighbors.end() && valid; ++u_it)
-                    {
-                        if(!(v->baseLine(views_[u_it->first]) > min_baseline_))
-                            valid = false;
-                    }
-
-                    if(valid)
-                        used_neighbors[vn.camID_] = true;
+                    ++num_bigger_t;
+                    ++nit;
                 }
 
-                ++nit;
+                if(num_bigger_t >= min_limit)
+                    neighbors.resize(num_bigger_t);
+                else
+                    neighbors.resize(min_limit);
+
+                // resort based on projective_score and world_point_score
+                neighbors.sort(L3DPP::sortVisualNeighborsByBothScores);
+
+                // combine
+                neighbors.splice(neighbors.end(),neighbors_tmp);
             }
-            */
 
             // highscore neighbors -> store in visual neighbor map
             std::list<L3DPP::VisualNeighbor>::iterator nit = neighbors.begin();

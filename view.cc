@@ -31,6 +31,10 @@ namespace L3DPP
         RtKinv_  = Rt_*Kinv_;
         C_ = Rt_ * (-1.0 * t_);
 
+        plane_n_ = getNormalizedRay(pp_);
+        width_1_3_ = float(width_) * 0.333f;
+        height_1_3_ = float(height_) * 0.333f;
+
         k_ = 0.0f;
         initial_median_depth_ = fmax(fabs(median_depth),L3D_EPS);
         median_depth_ = 0.0f;
@@ -387,6 +391,33 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
+    Eigen::Vector3d View::projectWithCheck(const Eigen::Vector3d P)
+    {
+        Eigen::Vector3d q = (R_*P + t_);
+
+        // projection to unit focal plane
+        double xn = (1.0 * q[0] + 0.0 * q[2]) / q[2];
+        double yn = (1.0 * q[1] + 0.0 * q[2]) / q[2];
+
+        // projection function
+        q[0] = xn;
+        q[1] = yn;
+        q[2] = 1;
+        q = K_*q;
+
+        Eigen::Vector3d res(0,0,-1);
+
+        if(fabs(q(2)) > L3D_EPS)
+        {
+            res(0) = q(0)/q(2);
+            res(1) = q(1)/q(2);
+            res(2) = 1;
+        }
+
+        return res;
+    }
+
+    //------------------------------------------------------------------------------
     bool View::projectedLongEnough(const L3DPP::Segment3D seg3D)
     {
         Eigen::Vector2d p1 = project(seg3D.P1());
@@ -422,6 +453,37 @@ namespace L3DPP
         Eigen::Vector3d r2 = v->getOpticalAxis();
 
         return acos(std::min(std::max(double(r1.dot(r2)),-1.0),1.0));
+    }
+
+    //------------------------------------------------------------------------------
+    unsigned int View::projectiveVisualNeighborScore(L3DPP::View* v)
+    {
+        // compute distance of the cam center of v to the camera plane
+        float dist = fabs(plane_n_.dot(C_ - v->C()));
+
+        if(dist < L3D_EPS)
+        {
+            // too close to project
+            return 0;
+        }
+
+        unsigned int score = 0;
+
+        // project into image
+        Eigen::Vector3d proj_C = projectWithCheck(v->C());
+
+        if(proj_C(2) < 0.0f)
+            return 0;
+
+        // check x coordinate
+        if(proj_C.x() < width_1_3_ || proj_C.x() > 2.0f*width_1_3_)
+            ++score;
+
+        // check y coordinate
+        if(proj_C.y() < height_1_3_ || proj_C.y() > 2.0f*height_1_3_)
+            ++score;
+
+        return score;
     }
 
     //------------------------------------------------------------------------------

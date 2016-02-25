@@ -55,8 +55,8 @@ namespace L3DPP
 
     // scoring
     #define L3D_DEF_MIN_SIMILARITY_3D 0.50f
-    #define L3D_DEF_MIN_SCORE_3D 1.0f
-    #define L3D_DEF_MIN_BEST_SCORE_3D 1.0f
+    #define L3D_DEF_MIN_SCORE_3D 0.70f
+    #define L3D_DEF_MIN_BEST_SCORE_3D 0.95f
 
     // replicator dynamics diffusion
     #define L3D_DEF_PERFORM_RDD false
@@ -136,6 +136,7 @@ namespace L3DPP
         unsigned int camID_;
         float score_;
         float axisAngle_;
+        unsigned int projective_score_;
     };
 
     // visual neighbor comparators
@@ -147,6 +148,16 @@ namespace L3DPP
     static bool sortVisualNeighborsByAngle(const L3DPP::VisualNeighbor lhs, const L3DPP::VisualNeighbor rhs)
     {
         return lhs.axisAngle_ > rhs.axisAngle_;
+    }
+
+    static bool sortVisualNeighborsByBothScores(const L3DPP::VisualNeighbor lhs, const L3DPP::VisualNeighbor rhs)
+    {
+        if(lhs.projective_score_ > rhs.projective_score_)
+            return true;
+        else if(lhs.projective_score_ == rhs.projective_score_ && lhs.score_ > rhs.score_)
+            return true;
+        else
+            return false;
     }
 
     //------------------------------------------------------------------------------
