@@ -128,7 +128,8 @@ namespace L3DPP
 
         // find intersections that are farthest apart
         double max_dist = 0.0f;
-        Eigen::Vector3d e_p1,e_p2;
+        Eigen::Vector3d e_p1(0,0,0);
+        Eigen::Vector3d e_p2(0,0,0);
 
         for(size_t i=0; i<intersections.size()-1; ++i)
         {
