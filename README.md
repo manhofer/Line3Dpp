@@ -48,7 +48,7 @@ Requirements
 
 * CUDA (optional)
 * OpenMP (optional)
-* Ceres-Solver (optional, **must be built as shared library!**)
+* Ceres-Solver (optional, **must be built as shared library on UNIX systems! On Windows a precompiled lib is included**)
 * RapidJSON (optional, for OpenMVG executable only)
 
 The code has been tested under **Ubuntu 14.04 LTS** with the following versions:

@@ -77,28 +77,37 @@ endif(Boost_FOUND)
 
 ##-----------------------------------------------------------------------------
 ## CERES
-if(NOT WIN32)
-  find_package(Ceres)
+find_package(Ceres)
 if(Ceres_FOUND)
   include_directories(${CERES_INCLUDES})
-endif(Ceres_FOUND)  
-endif(NOT WIN32)
+  set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} optimized ceres)
+endif(Ceres_FOUND)
 
-IF(Ceres_FOUND)
-	UNSET(CERES_LIBDIR CACHE)
-	IF(MSVC90)
-	    FIND_PATH(CERES_LIBDIR NAMES ceres.lib PATHS ${PRECOMPILED_DIR}/ceres/${PRECOMPILED_LIB}/vc9)
-	ELSEIF(MSVC10)
-	    FIND_PATH(CERES_LIBDIR NAMES ceres.lib PATHS ${PRECOMPILED_DIR}/ceres/${PRECOMPILED_LIB}/vc10)
-	ELSE(MSVC90)
-	    FIND_PATH(CERES_LIBDIR NAMES ceres.lib PATHS ${PRECOMPILED_DIR}/ceres/${PRECOMPILED_LIB}/vc11)
-	ENDIF(MSVC90)
+if(NOT Ceres_FOUND AND WIN32)
+  # use precompiled CERES version
+  set(PRECOMPILED_DIR ${CMAKE_SOURCE_DIR}/libs/precompiled)
 
-	FIND_PATH(CERES_INCLUDE_DIR NAMES ceres/ceres.h PATHS ${PRECOMPILED_DIR}/ceres/include)
-	find_package_handle_standard_args(CERES DEFAULT_MSG CERES_INCLUDE_DIR)
-	set (EXTRA_LIBRARIES ${EXTRA_LIBRARIES} optimized ceres)
-	include_directories(${CERES_INCLUDE_DIR})
-ENDIF(Ceres_FOUND)
+  # only 64bit CERES is included
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    set(PRECOMPILED_LIB lib64)
+    set(PRECOMPILED_LIB_DIR_FILTER bin64/ )
+    deep_copy_file(${PRECOMPILED_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE} dll ${PRECOMPILED_LIB_DIR_FILTER} release)
+
+    UNSET(CERES_LIBDIR CACHE)
+    FIND_PATH(CERES_LIBDIR NAMES ceres.lib PATHS ${PRECOMPILED_DIR}/ceres/${PRECOMPILED_LIB}/vc10)
+    FIND_PATH(CERES_INCLUDE_DIR NAMES ceres/ceres.h PATHS ${PRECOMPILED_DIR}/ceres/include)
+
+    if(CERES_LIBDIR AND CERES_INCLUDE_DIR)
+      find_package_handle_standard_args(CERES DEFAULT_MSG CERES_INCLUDE_DIR)
+      set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} optimized ceres)
+      include_directories(${CERES_INCLUDE_DIR})
+      link_directories(${CERES_LIBDIR})
+      set(Ceres_FOUND 1)
+    endif(CERES_LIBDIR AND CERES_INCLUDE_DIR)
+    
+  endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+		   
+endif(NOT Ceres_FOUND AND WIN32)
 
 ##-----------------------------------------------------------------------------
 ## OpenMP
@@ -165,9 +174,9 @@ ELSE(L3DPP_CUDA)
 ENDIF(L3DPP_CUDA)
 
 IF(L3DPP_CUDA)
-    CUDA_ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
+  CUDA_ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
 ELSE(L3DPP_CUDA)
-    ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
+  ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
 ENDIF(L3DPP_CUDA)
 target_link_libraries(line3Dpp ${ALL_LIBRARIES})
 
