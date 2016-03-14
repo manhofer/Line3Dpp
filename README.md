@@ -153,7 +153,7 @@ This executable reads VisualSfM results in the form of an `.nvm` file (parameter
 
 This executable reads bundler results in the form of a `bundler.rd.out` file.
 
-	./runLine3Dpp_bundler -i <bundler_result_folder> [-t <image_extension>]
+	./runLine3Dpp_bundler -i <image_folder> -b <full_path_to_bundle_file> [-t <image_extension>]
 
 ### Pix4D
 
