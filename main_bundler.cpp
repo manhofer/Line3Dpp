@@ -48,8 +48,11 @@ int main(int argc, char *argv[])
 {
     TCLAP::CmdLine cmd("LINE3D++");
 
-    TCLAP::ValueArg<std::string> inputArg("i", "input_folder", "folder containing the bundle.rd.out file", true, ".", "string");
+    TCLAP::ValueArg<std::string> inputArg("i", "image_folder", "folder containing the images", true, ".", "string");
     cmd.add(inputArg);
+
+    TCLAP::ValueArg<std::string> bundleFileArg("b", "bundle_file", "full path to the bundle.*.out file (if not specified -> image_folder/../bundle.rd.out)", false, "", "string");
+    cmd.add(bundleFileArg);
 
     TCLAP::ValueArg<std::string> extArg("t", "image_extension", "image extension (case sensitive), if not specified: jpg, png or bmp expected", false, "", "string");
     cmd.add(extArg);
@@ -104,12 +107,18 @@ int main(int argc, char *argv[])
 
     // read arguments
     cmd.parse(argc,argv);
-    std::string inputFolder = inputArg.getValue().c_str();
-    std::string bundleFile = inputFolder+"/bundle.rd.out";
+    std::string imageFolder = inputArg.getValue().c_str();
+    std::string bundleFile = bundleFileArg.getValue().c_str();
     std::string outputFolder = outputArg.getValue().c_str();
     std::string imgExtension = extArg.getValue().c_str();
     if(outputFolder.length() == 0)
-        outputFolder = inputFolder+"/Line3D++/";
+        outputFolder = imageFolder+"/Line3D++/";
+
+    if(imgExtension.length() > 0 && imgExtension.substr(0,1) != ".")
+        imgExtension = "."+imgExtension;
+
+    if(bundleFile.length() == 0)
+        bundleFile = imageFolder+"/../bundle.rd.out";
 
     int maxWidth = scaleArg.getValue();
     unsigned int neighbors = std::max(neighborArg.getValue(),2);
@@ -271,22 +280,19 @@ int main(int argc, char *argv[])
         if(imgExtension.length() == 0)
         {
             // look for common image extensions
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".jpg"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".JPG"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".png"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".PNG"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".jpeg"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".JPEG"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".bmp"));
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+".BMP"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".jpg"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".JPG"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".png"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".PNG"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".jpeg"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".JPEG"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".bmp"));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".BMP"));
         }
         else
         {
             // use given extension
-            if(imgExtension.substr(0,1) != ".")
-                imgExtension = "."+imgExtension;
-
-            possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/visualize/"+fixedID+imgExtension));
+            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+imgExtension));
         }
 
         bool image_found = false;

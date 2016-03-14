@@ -135,6 +135,9 @@ int main(int argc, char *argv[])
     unsigned int visibility_t = visibilityArg.getValue();
     float constRegDepth = constRegDepthArg.getValue();
 
+    if(imgExtension.substr(0,1) != ".")
+        imgExtension = "."+imgExtension;
+
     // since no median depth can be computed without camera-to-worldpoint links
     // sigma_p MUST be positive and in pixels!
     if(sigmaP < L3D_EPS && constRegDepth < L3D_EPS)
@@ -285,9 +288,6 @@ int main(int argc, char *argv[])
         else
         {
             // use given extension
-            if(imgExtension.substr(0,1) != ".")
-                imgExtension = "."+imgExtension;
-
             possible_imgs.push_back(boost::filesystem::wpath(inputFolder+"/"+img_filename+imgExtension));
         }
 
