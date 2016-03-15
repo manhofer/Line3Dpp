@@ -1731,8 +1731,6 @@ namespace L3DPP
         localID_ = 0;
         used_.clear();
 
-        std::cout << med_scene_depth_ << "  " << med_scene_depth_lines_ << std::endl;
-
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
