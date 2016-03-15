@@ -17,6 +17,7 @@ namespace L3DPP
         neighbors_by_worldpoints_ = neighbors_by_worldpoints;
         num_lines_total_ = 0;
         med_scene_depth_ = L3D_EPS;
+        med_scene_depth_lines_ = 0.0f;
 
         // default
         collinearity_t_ = L3D_DEF_COLLINEARITY_T;
@@ -115,6 +116,15 @@ namespace L3DPP
                           std::list<unsigned int>& wps_or_neighbors,
                           std::vector<cv::Vec4f> line_segments)
     {
+        // check size
+        if(std::max(image.cols,image.rows) < L3D_DEF_MIN_IMG_WIDTH)
+        {
+            display_text_mutex_.lock();
+            std::cout << prefix_err_ << "image is too small for reliable results... (larger side should be >= " << L3D_DEF_MIN_IMG_WIDTH << "px)" << std::endl;
+            display_text_mutex_.unlock();
+            return;
+        }
+
         // check ID
         view_reserve_mutex_.lock();
         if(views_reserved_.find(camID) != views_reserved_.end())
@@ -200,7 +210,7 @@ namespace L3DPP
         processed_[camID] = false;
         visual_neighbors_[camID] = std::map<unsigned int,bool>();
         num_lines_total_ += lines->width();
-        views_avg_depths_.push_back(fmax(fabs(median_depth),L3D_EPS));
+        views_avg_depths_.push_back(fmax(median_depth,L3D_EPS));
 
         if(neighbors_by_worldpoints_)
         {
@@ -420,6 +430,7 @@ namespace L3DPP
             // compute median scene depth
             std::sort(views_avg_depths_.begin(),views_avg_depths_.end());
             med_scene_depth_ = views_avg_depths_[views_avg_depths_.size()/2];
+            std::cout << prefix_ << "median_scene_depth = " << med_scene_depth_ << std::endl;
         }
 
 #ifdef L3DPP_OPENMP
@@ -442,6 +453,7 @@ namespace L3DPP
 
         // find visual neighbors
         std::cout << prefix_ << "computing visual neighbors...     [" << num_neighbors_ << " imgs.]" << std::endl;
+        std::cout << prefix_ << "starting to match " << views_.size() << " images..." << std::endl;
 
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
@@ -550,7 +562,7 @@ namespace L3DPP
                 std::list<L3DPP::VisualNeighbor> neighbors_tmp = neighbors;
 
                 // get max score
-                float score_t = 0.70f*neighbors.front().score_;
+                float score_t = 0.75f*neighbors.front().score_;
                 unsigned int num_bigger_t = 0;
 
                 // count the number of highly similar views
@@ -654,7 +666,7 @@ namespace L3DPP
             else
                 scoringCPU(it->first,valid_f);
 
-            std::cout << prefix_ << "scoring: " << "clusterable_segments=" << int(valid_f*100) << "%";
+            std::cout << prefix_ << "scoring: " << "clusterable_segments = " << int(valid_f*100) << "%";
             std::cout << std::endl;
 
             // cleanup GPU data
@@ -674,6 +686,35 @@ namespace L3DPP
             std::cout << std::setfill(' ') << std::setw(L3D_DISP_MATCHES) << num_matches_[it->first] << std::endl;
             std::cout << prefix_ << "median_depth: " << views_[it->first]->median_depth() << std::endl;
         }
+
+        /*
+        // DEBUG: save all remaining matches
+        std::vector<L3DPP::Segment3D> all_matches;
+        std::map<unsigned int,std::vector<std::list<L3DPP::Match> > >::iterator dbg_it = matches_.begin();
+        for(; dbg_it!=matches_.end(); ++dbg_it)
+        {
+            L3DPP::View* v = views_[dbg_it->first];
+            for(size_t i=0; i<dbg_it->second.size(); ++i)
+            {
+                std::list<L3DPP::Match>::iterator dbg_it2 = dbg_it->second.at(i).begin();
+                for(; dbg_it2!=dbg_it->second.at(i).end(); ++dbg_it2)
+                {
+                    L3DPP::Match m = *dbg_it2;
+                    L3DPP::Segment3D seg3D = v->unprojectSegment(m.src_segID_,m.depth_p1_,m.depth_p2_);
+                    all_matches.push_back(seg3D);
+                }
+            }
+        }
+        saveTempResultAsSTL(data_folder_,"all",all_matches);
+
+        // DEBUG: save best hypotheses
+        std::vector<L3DPP::Segment3D> best_matches;
+        for(size_t i=0; i<estimated_position3D_.size(); ++i)
+        {
+            best_matches.push_back(estimated_position3D_[i].first);
+        }
+        saveTempResultAsSTL(data_folder_,"best",best_matches);
+        */
     }
 
     //------------------------------------------------------------------------------
@@ -743,6 +784,25 @@ namespace L3DPP
             // epipolar lines
             Eigen::Vector3d epi_p1 = F*p1;
             Eigen::Vector3d epi_p2 = F*p2;
+
+            /* DEBUG only...
+            if(src > 2)
+            {
+                cv::namedWindow("src",CV_WINDOW_NORMAL);
+                cv::namedWindow("tgt",CV_WINDOW_NORMAL);
+                cv::Mat Isrc,Itgt;
+                v_src->drawLineImage(Isrc);
+                v_tgt->drawLineImage(Itgt);
+
+                v_src->drawSingleLine(r,Isrc,cv::Scalar(0,0,255));
+                v_tgt->drawEpipolarLine(epi_p1,Itgt);
+                v_tgt->drawEpipolarLine(epi_p2,Itgt);
+
+                cv::imshow("src",Isrc);
+                cv::imshow("tgt",Itgt);
+                cv::waitKey();
+            }
+            */
 
             // use priority queue when kNN > 0
             L3DPP::pairwise_matches scored_matches;
@@ -1039,7 +1099,7 @@ namespace L3DPP
 #endif //L3DPP_OPENMP
         for(size_t i=0; i<matches_[src].size(); ++i)
         {
-            std::map<unsigned int,bool> valid_matches_exist;
+            bool valid_match_exists = false;
 
             std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
             for(; it!=matches_[src][i].end(); ++it)
@@ -1047,6 +1107,24 @@ namespace L3DPP
                 L3DPP::Match M = *it;
                 float score3D = 0.0f;
                 std::map<unsigned int,float> score_per_cam;
+
+                // unproject once
+                L3DPP::Segment3D M3D = v->unprojectSegment(M.src_segID_,M.depth_p1_,M.depth_p2_);
+
+                // compute spatial regularizers
+                float reg1,reg2;
+                float sig1 = M.depth_p1_*k;
+                float sig2 = M.depth_p2_*k;
+
+                reg1 = 2.0f*sig1*sig1;
+                reg2 = 2.0f*sig2*sig2;
+
+                // compute spatial regularizers (tgt)
+                float sig1_tgt = views_[M.tgt_camID_]->regularizerFrom3Dpoint(M3D.P1());
+                float sig2_tgt = views_[M.tgt_camID_]->regularizerFrom3Dpoint(M3D.P2());
+
+                reg1 = 0.5f*(reg1 + 2.0f*sig1_tgt*sig1_tgt);
+                reg2 = 0.5f*(reg2 + 2.0f*sig2_tgt*sig2_tgt);
 
                 std::list<L3DPP::Match>::iterator it2 = matches_[src][i].begin();
                 for(; it2!=matches_[src][i].end(); ++it2)
@@ -1056,7 +1134,7 @@ namespace L3DPP
                     if(M.tgt_camID_ != M2.tgt_camID_)
                     {
                         // compute similarity
-                        float sim = similarityForScoring(M,M2,k);
+                        float sim = similarityForScoring(M,M2,M3D,reg1,reg2);
 
                         if(score_per_cam.find(M2.tgt_camID_) != score_per_cam.end())
                         {
@@ -1076,13 +1154,13 @@ namespace L3DPP
                 }
 
                 (*it).score3D_ = score3D;
-                if(score3D > L3D_DEF_MIN_SCORE_3D)
+                if(score3D > L3D_DEF_MIN_BEST_SCORE_3D)
                 {
-                    valid_matches_exist[M.tgt_camID_] = true;
+                    valid_match_exists = true;
                 }
             }
 
-            if(valid_matches_exist.size() > 1)
+            if(valid_match_exists)
             {
                 scoring_mutex_.lock();
                 ++num_valid;
@@ -1130,6 +1208,7 @@ namespace L3DPP
 
         // store matches in array
         L3DPP::DataArray<float4>* matches = new L3DPP::DataArray<float4>(num_matches_[src],1);
+        L3DPP::DataArray<float2>* regularizers_tgt = new L3DPP::DataArray<float2>(num_matches_[src],1);
         L3DPP::DataArray<float>* scores = new L3DPP::DataArray<float>(num_matches_[src],1,true);
 
 #ifdef L3DPP_OPENMP
@@ -1147,6 +1226,9 @@ namespace L3DPP
                     L3DPP::Match m = *it;
                     matches->dataCPU(offset+id,0)[0] = make_float4(i,m.tgt_camID_,
                                                                    m.depth_p1_,m.depth_p2_);
+                    L3DPP::Segment3D s3D = v->unprojectSegment(m.src_segID_,m.depth_p1_,m.depth_p2_);
+                    regularizers_tgt->dataCPU(offset+id,0)[0] = make_float2(views_[m.tgt_camID_]->regularizerFrom3Dpoint(s3D.P1()),
+                                                                            views_[m.tgt_camID_]->regularizerFrom3Dpoint(s3D.P2()));
                 }
             }
         }
@@ -1154,11 +1236,13 @@ namespace L3DPP
         // upload
         ranges->upload();
         matches->upload();
+        regularizers_tgt->upload();
 
         unsigned int num_valid = 0;
 
         // score on GPU
-        L3DPP::score_matches_GPU(v->lines(),matches,ranges,scores,v->RtKinvGPU(),v->C_GPU(),
+        L3DPP::score_matches_GPU(v->lines(),matches,ranges,scores,regularizers_tgt,
+                                 v->RtKinvGPU(),v->C_GPU(),
                                  two_sigA_sqr_,k,L3D_DEF_MIN_SIMILARITY_3D);
         scores->download();
 
@@ -1168,7 +1252,7 @@ namespace L3DPP
 #endif //L3DPP_OPENMP
         for(size_t i=0; i<matches_[src].size(); ++i)
         {
-            std::map<unsigned int,bool> valid_matches_exist;
+            bool valid_match_exists = false;
             int offset = ranges->dataCPU(i,0)[0].x;
             if(offset >= 0)
             {
@@ -1182,14 +1266,14 @@ namespace L3DPP
                     // update
                     (*it).score3D_ = score;
 
-                    if(score > L3D_DEF_MIN_SCORE_3D)
+                    if(score > L3D_DEF_MIN_BEST_SCORE_3D)
                     {
-                        valid_matches_exist[(*it).tgt_camID_] = true;
+                        valid_match_exists = true;
                     }
                 }
             }
 
-            if(valid_matches_exist.size() > 1)
+            if(valid_match_exists)
             {
                 scoring_mutex_.lock();
                 ++num_valid;
@@ -1204,14 +1288,15 @@ namespace L3DPP
         delete ranges;
         delete matches;
         delete scores;
+        delete regularizers_tgt;
 #endif //L3DPP_CUDA
     }
 
     //------------------------------------------------------------------------------
     float Line3D::similarityForScoring(const L3DPP::Match m1, const L3DPP::Match m2,
-                                       const float current_k1)
+                                       const L3DPP::Segment3D seg3D1,
+                                       const float reg1, const float reg2)
     {
-        L3DPP::Segment3D seg3D1 = unprojectMatch(m1,true);
         L3DPP::Segment3D seg3D2 = unprojectMatch(m2,true);
 
         if(seg3D1.length() < L3D_EPS || seg3D2.length() < L3D_EPS)
@@ -1228,13 +1313,6 @@ namespace L3DPP
             // local similarity
             float d1 = m1.depth_p1_-m2.depth_p1_;
             float d2 = m1.depth_p2_-m2.depth_p2_;
-
-            float reg1,reg2;
-            float sig1 = m1.depth_p1_*current_k1;
-            float sig2 = m1.depth_p2_*current_k1;
-
-            reg1 = 2.0f*sig1*sig1;
-            reg2 = 2.0f*sig2*sig2;
 
             sim_p = fmin(expf(-d1*d1/reg1),expf(-d2*d2/reg2));
         }
@@ -1289,6 +1367,16 @@ namespace L3DPP
         float angle = angleBetweenSeg3D(s1,s2,true);
         float sim_a = expf(-angle*angle/two_sigA_sqr_);
 
+        // cutoff depths
+        float cutoff1 = v1->median_depth();
+        float cutoff2 = v2->median_depth();
+
+        if(med_scene_depth_lines_ > L3D_EPS)
+        {
+            cutoff1 = fmin(cutoff1,med_scene_depth_lines_);
+            cutoff2 = fmin(cutoff2,med_scene_depth_lines_);
+        }
+
         // positional similarity
         float d11 = s2.distance_Point2Line(s1.P1());
         float d12 = s2.distance_Point2Line(s1.P2());
@@ -1297,14 +1385,14 @@ namespace L3DPP
 
         float reg11,reg12,reg21,reg22;
         float sig11;
-        if(m1.depth_p1_ > v1->median_depth())
-            sig11 = v1->median_sigma();
+        if(m1.depth_p1_ > cutoff1)
+            sig11 = cutoff1*v1->k();
         else
             sig11 = m1.depth_p1_*v1->k();
 
         float sig12;
-        if(m1.depth_p2_ > v1->median_depth())
-            sig12 = v1->median_sigma();
+        if(m1.depth_p2_ > cutoff1)
+            sig12 = cutoff1*v1->k();
         else
             sig12 = m1.depth_p2_*v1->k();
 
@@ -1312,14 +1400,14 @@ namespace L3DPP
         reg12 = 2.0f*sig12*sig12;
 
         float sig21;
-        if(m2.depth_p1_ > v2->median_depth())
-            sig21 = v2->median_sigma();
+        if(m2.depth_p1_ > cutoff2)
+            sig21 = cutoff2*v2->k();
         else
             sig21 = m2.depth_p1_*v2->k();
 
         float sig22;
-        if(m2.depth_p2_ > v2->median_depth())
-            sig22 = v2->median_sigma();
+        if(m2.depth_p2_ > cutoff2)
+            sig22 = cutoff2*v2->k();
         else
             sig22 = m2.depth_p2_*v2->k();
 
@@ -1379,6 +1467,22 @@ namespace L3DPP
         // filter and find median depth
         std::vector<float> depths;
 
+        // compute maximum score for this view
+        float max_score = 0.0f;
+        for(size_t i=0; i<matches_[src].size(); ++i)
+        {
+            std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
+            for(; it!=matches_[src][i].end(); ++it)
+            {
+                max_score = fmax(max_score,(*it).score3D_);
+            }
+        }
+
+        // scores must be at least a certain percentage of the best
+        float score_lim = L3D_DEF_MIN_BEST_SCORE_PERC*max_score;
+
+        std::cout << prefix_ << "scoring: max_score = " << max_score << std::endl;
+
         unsigned int num_valid = 0;
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
@@ -1393,7 +1497,7 @@ namespace L3DPP
             std::list<L3DPP::Match>::iterator it = matches.begin();
             for(; it!=matches.end(); ++it)
             {
-                if((*it).score3D_ > L3D_DEF_MIN_SCORE_3D)
+                if((*it).score3D_ > L3D_DEF_MIN_SCORE_3D && (*it).score3D_ > score_lim)
                 {
                     matches_[src][i].push_back(*it);
 
@@ -1419,6 +1523,11 @@ namespace L3DPP
                 depths.push_back(best_match.depth_p1_);
                 depths.push_back(best_match.depth_p2_);
                 best_match_mutex_.unlock();
+            }
+            else
+            {
+                // remove matches...
+                matches_[src][i].clear();
             }
         }
 
@@ -1522,6 +1631,24 @@ namespace L3DPP
             findCollinearSegments();
         }
 
+        // compute median scene depth for lines
+        std::vector<float> scene_depths_lines;
+        for(std::map<unsigned int,L3DPP::View*>::iterator vit=views_.begin(); vit!=views_.end(); ++vit)
+        {
+            if(vit->second->median_depth() > L3D_EPS)
+                scene_depths_lines.push_back(vit->second->median_depth());
+        }
+
+        if(scene_depths_lines.size() > 0)
+        {
+            std::sort(scene_depths_lines.begin(),scene_depths_lines.end());
+            med_scene_depth_lines_ = scene_depths_lines[scene_depths_lines.size()/2];
+        }
+        else
+        {
+            med_scene_depth_lines_ = L3D_EPS;
+        }
+
         // compute affinity matrix
         std::cout << prefix_ << "computing affinity matrix..." << std::endl;
         computingAffinityMatrix();
@@ -1603,6 +1730,8 @@ namespace L3DPP
         local2global_.clear();
         localID_ = 0;
         used_.clear();
+
+        std::cout << med_scene_depth_ << "  " << med_scene_depth_lines_ << std::endl;
 
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
@@ -2273,6 +2402,55 @@ namespace L3DPP
 
         view_reserve_mutex_.unlock();
         view_mutex_.unlock();
+    }
+
+    //------------------------------------------------------------------------------
+    void Line3D::saveTempResultAsSTL(const std::string output_folder,
+                                     const std::string suffix,
+                                     const std::vector<L3DPP::Segment3D> lines3D)
+    {
+        // get filename
+        std::string filename = output_folder+"/"+createOutputFilename()+"__"+suffix+".stl";
+
+        std::ofstream file;
+        file.open(filename.c_str());
+
+        file << "solid lineModel" << std::endl;
+
+        for(size_t i=0; i<lines3D.size(); ++i)
+        {
+            L3DPP::Segment3D current = lines3D[i];
+
+            Eigen::Vector3d P1 = current.P1();
+            Eigen::Vector3d P2 = current.P2();
+
+            char x1[50];
+            char y1[50];
+            char z1[50];
+
+            char x2[50];
+            char y2[50];
+            char z2[50];
+
+            sprintf(x1,"%e",P1.x());
+            sprintf(y1,"%e",P1.y());
+            sprintf(z1,"%e",P1.z());
+
+            sprintf(x2,"%e",P2.x());
+            sprintf(y2,"%e",P2.y());
+            sprintf(z2,"%e",P2.z());
+
+            file << " facet normal 1.0e+000 0.0e+000 0.0e+000" << std::endl;
+            file << "  outer loop" << std::endl;
+            file << "   vertex " << x1 << " " << y1 << " " << z1 << std::endl;
+            file << "   vertex " << x2 << " " << y2 << " " << z2 << std::endl;
+            file << "   vertex " << x1 << " " << y1 << " " << z1 << std::endl;
+            file << "  endloop" << std::endl;
+            file << " endfacet" << std::endl;
+        }
+
+        file << "endsolid lineModel" << std::endl;
+        file.close();
     }
 
     //------------------------------------------------------------------------------

@@ -38,6 +38,7 @@ namespace L3DPP
 {
     // feature detection
     #define L3D_DEF_MAX_IMG_WIDTH 1920
+    #define L3D_DEF_MIN_IMG_WIDTH 800
     #define L3D_DEF_MIN_LINE_LENGTH_FACTOR 0.005f
     #define L3D_DEF_MAX_NUM_SEGMENTS 3000
     #define L3D_DEF_LOAD_AND_STORE_SEGMENTS false
@@ -55,8 +56,9 @@ namespace L3DPP
 
     // scoring
     #define L3D_DEF_MIN_SIMILARITY_3D 0.50f
-    #define L3D_DEF_MIN_SCORE_3D 0.70f
-    #define L3D_DEF_MIN_BEST_SCORE_3D 0.95f
+    #define L3D_DEF_MIN_SCORE_3D 0.75f
+    #define L3D_DEF_MIN_BEST_SCORE_3D 1.001f
+    #define L3D_DEF_MIN_BEST_SCORE_PERC 0.10f
 
     // replicator dynamics diffusion
     #define L3D_DEF_PERFORM_RDD false

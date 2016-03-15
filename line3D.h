@@ -278,7 +278,8 @@ namespace L3DPP
 
         // similarity between two matches/segments
         float similarityForScoring(const L3DPP::Match m1, const L3DPP::Match m2,
-                                   const float current_k1);
+                                   const L3DPP::Segment3D seg3D1,
+                                   const float reg1, const float reg2);
         float similarity(const L3DPP::Segment2D seg1, const L3DPP::Segment2D seg2,
                          const bool truncate);
         float similarity(const L3DPP::Segment3D s1, const L3DPP::Match m1,
@@ -336,6 +337,11 @@ namespace L3DPP
         // converts Eigen::Matrix to DataArray<float>
         void eigen2dataArray(L3DPP::DataArray<float>* &DA, const Eigen::MatrixXd M);
 
+        // saves a temporary 3D model as .stl
+        void saveTempResultAsSTL(const std::string output_folder,
+                                 const std::string suffix,
+                                 const std::vector<L3DPP::Segment3D> lines3D);
+
         // basic params
         std::string data_folder_;
         std::string prefix_;
@@ -359,6 +365,7 @@ namespace L3DPP
         std::map<unsigned int,bool> views_reserved_;
         std::vector<float> views_avg_depths_;
         float med_scene_depth_;
+        float med_scene_depth_lines_;
 
         // neighbors
         bool neighbors_by_worldpoints_;

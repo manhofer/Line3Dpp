@@ -55,9 +55,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         float z;
         float w;
     };
+
+    // float2 - for non-CUDA machines
+    struct float2
+    {
+        float x;
+        float y;
+    };
 #endif //L3DPP_CUDA
 
-// define serialization for float4
+// define serialization for float2/4
 namespace boost
 {
     namespace serialization
@@ -69,6 +76,13 @@ namespace boost
           ar & boost::serialization::make_nvp("y", f.y);
           ar & boost::serialization::make_nvp("z", f.z);
           ar & boost::serialization::make_nvp("w", f.w);
+        }
+
+        template<class Archive>
+        void serialize(Archive & ar, float2& f, const unsigned int version)
+        {
+          ar & boost::serialization::make_nvp("x", f.x);
+          ar & boost::serialization::make_nvp("y", f.y);
         }
     }
 }

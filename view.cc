@@ -309,7 +309,7 @@ namespace L3DPP
         Eigen::Vector3d pp_shifted = pp_+Eigen::Vector3d(r,0.0,0.0);
         Eigen::Vector3d ray_pp = getNormalizedRay(pp_);
         Eigen::Vector3d ray_pp_shifted = getNormalizedRay(pp_shifted);
-        double alpha = acos(std::min(std::max(double(ray_pp.dot(ray_pp_shifted)),-1.0),1.0));
+        double alpha = acos(fmin(fmax(double(ray_pp.dot(ray_pp_shifted)),-1.0),1.0));
         k_ = sin(alpha);
     }
 
@@ -442,6 +442,12 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
+    float View::regularizerFrom3Dpoint(const Eigen::Vector3d P)
+    {
+        return (P-C_).norm()*k_;
+    }
+
+    //------------------------------------------------------------------------------
     Eigen::Vector3d View::getOpticalAxis()
     {
         return getNormalizedRay(pp_);
@@ -453,7 +459,7 @@ namespace L3DPP
         Eigen::Vector3d r1 = getNormalizedRay(pp_);
         Eigen::Vector3d r2 = v->getOpticalAxis();
 
-        return acos(std::min(std::max(double(r1.dot(r2)),-1.0),1.0));
+        return acos(fmin(fmax(double(r1.dot(r2)),-1.0),1.0));
     }
 
     //------------------------------------------------------------------------------

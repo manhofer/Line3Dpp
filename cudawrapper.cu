@@ -255,7 +255,8 @@ __global__ void K_match_lines(const int width, const int height,
 ////////////////////////////////////////////////////////////////////////////////
 __global__ void K_score_matches(const int num_matches, const float4* lines,
                                 const float4* matches, float* scores,
-                                const int2* ranges, const float* RtKinv, const int r_stride,
+                                const int2* ranges, const float2* reg_tgt,
+                                const float* RtKinv, const int r_stride,
                                 const float3 C, const float angle_reg,
                                 const float k, const float sim_t)
 {
@@ -291,6 +292,14 @@ __global__ void K_score_matches(const int num_matches, const float4* lines,
         float sig2 = k*d2_src;
         pos_reg1 = 2.0f*sig1*sig1;
         pos_reg2 = 2.0f*sig2*sig2;
+
+        // position regularizers (tgt)
+        float pos_reg1_tgt = 2.0f*reg_tgt[x].x*reg_tgt[x].x;
+        float pos_reg2_tgt = 2.0f*reg_tgt[x].y*reg_tgt[x].y;
+
+        // average regularizer
+        pos_reg1 = 0.5f*(pos_reg1+pos_reg1_tgt);
+        pos_reg2 = 0.5f*(pos_reg2+pos_reg2_tgt);
 
         // ranges
         int start = ranges[lID].x;
@@ -651,6 +660,7 @@ unsigned int match_lines_GPU(L3DPP::DataArray<float4>* lines_src,
 ////////////////////////////////////////////////////////////////////////////////
 void score_matches_GPU(L3DPP::DataArray<float4>* lines, L3DPP::DataArray<float4>* matches,
                        L3DPP::DataArray<int2>* ranges, L3DPP::DataArray<float>* scores,
+                       L3DPP::DataArray<float2>* regularizers_tgt,
                        L3DPP::DataArray<float>* RtKinv, const float3 C,
                        const float two_sigA_sqr,
                        const float k, const float min_similarity)
@@ -667,7 +677,8 @@ void score_matches_GPU(L3DPP::DataArray<float4>* lines, L3DPP::DataArray<float4>
     // score matches
     L3DPP::K_score_matches <<< dimGrid, dimBlock >>> (width,lines->dataGPU(),
                                                       matches->dataGPU(),scores->dataGPU(),
-                                                      ranges->dataGPU(),RtKinv->dataGPU(),
+                                                      ranges->dataGPU(),regularizers_tgt->dataGPU(),
+                                                      RtKinv->dataGPU(),
                                                       RtKinv->strideGPU(),C,two_sigA_sqr,
                                                       k,min_similarity);
 }

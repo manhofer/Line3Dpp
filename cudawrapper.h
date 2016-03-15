@@ -75,6 +75,7 @@ namespace L3DPP
                                   L3DPP::DataArray<float4>* matches,
                                   L3DPP::DataArray<int2>* ranges,
                                   L3DPP::DataArray<float>* scores,
+                                  L3DPP::DataArray<float2>* regularizers_tgt,
                                   L3DPP::DataArray<float>* RtKinv,
                                   const float3 C, const float two_sigA_sqr,
                                   const float k, const float min_similarity);

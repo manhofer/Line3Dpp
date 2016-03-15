@@ -130,6 +130,9 @@ namespace L3DPP
             k_ = sigmaP/med_scene_depth;
         }
 
+        // compute regularizer with respect to given 3D point
+        float regularizerFrom3Dpoint(const Eigen::Vector3d P);
+
         // get coordinates of a specific line segment
         Eigen::Vector4f getLineSegment2D(const unsigned int id);
 
