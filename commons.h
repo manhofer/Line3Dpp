@@ -41,7 +41,7 @@ namespace L3DPP
     #define L3D_DEF_MIN_IMG_WIDTH 800
     #define L3D_DEF_MIN_LINE_LENGTH_FACTOR 0.005f
     #define L3D_DEF_MAX_NUM_SEGMENTS 3000
-    #define L3D_DEF_LOAD_AND_STORE_SEGMENTS false
+    #define L3D_DEF_LOAD_AND_STORE_SEGMENTS true
 
     // collinearity
     #define L3D_DEF_COLLINEARITY_T -1.0f
@@ -49,10 +49,11 @@ namespace L3DPP
     // matching
     #define L3D_DEF_MATCHING_NEIGHBORS 10
     #define L3D_DEF_EPIPOLAR_OVERLAP 0.25f
-    #define L3D_DEF_MIN_BASELINE 0.01f
+    #define L3D_DEF_MIN_BASELINE 0.1f
     #define L3D_DEF_KNN 10
     #define L3D_DEF_SCORING_POS_REGULARIZER 2.5f
     #define L3D_DEF_SCORING_ANG_REGULARIZER 10.0f
+    #define L3D_DEF_CHECK_MATCH_ORIENTATION true
 
     // scoring
     #define L3D_DEF_MIN_SIMILARITY_3D 0.50f
@@ -83,6 +84,10 @@ namespace L3DPP
 
     #define L3D_EPS 1e-12
     #define L3D_PIO2 1.5707963267948966f
+    #define L3D_PI04 0.785398163f
+    #define L3D_PI34 2.35619449f
+    #define L3D_PI08 0.392699082f
+    #define L3D_PI78 2.748893572f
 
     //------------------------------------------------------------------------------
     // 2D segment (sortable)
@@ -138,7 +143,7 @@ namespace L3DPP
         unsigned int camID_;
         float score_;
         float axisAngle_;
-        unsigned int projective_score_;
+        float distance_score_;
     };
 
     // visual neighbor comparators
@@ -152,14 +157,9 @@ namespace L3DPP
         return lhs.axisAngle_ > rhs.axisAngle_;
     }
 
-    static bool sortVisualNeighborsByBothScores(const L3DPP::VisualNeighbor lhs, const L3DPP::VisualNeighbor rhs)
+    static bool sortVisualNeighborsByDistScore(const L3DPP::VisualNeighbor lhs, const L3DPP::VisualNeighbor rhs)
     {
-        if(lhs.projective_score_ > rhs.projective_score_)
-            return true;
-        else if(lhs.projective_score_ == rhs.projective_score_ && lhs.score_ > rhs.score_)
-            return true;
-        else
-            return false;
+        return lhs.distance_score_ > rhs.distance_score_;
     }
 
     //------------------------------------------------------------------------------

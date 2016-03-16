@@ -463,34 +463,41 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    unsigned int View::projectiveVisualNeighborScore(L3DPP::View* v)
+    double View::segmentQualityAngle(const L3DPP::Segment3D seg3D,
+                                     const unsigned int segID)
     {
-        // compute distance of the cam center of v to the camera plane
-        float dist = fabs(plane_n_.dot(C_ - v->C()));
-
-        if(dist < L3D_EPS)
+        if(segID < lines_->width())
         {
-            // too close to project
-            return 0;
+            Eigen::Vector2d p1(lines_->dataCPU(segID,0)[0].x,
+                               lines_->dataCPU(segID,0)[0].y);
+            Eigen::Vector2d p2(lines_->dataCPU(segID,0)[0].z,
+                               lines_->dataCPU(segID,0)[0].w);
+            Eigen::Vector2d p = 0.5*(p1+p2);
+
+            Eigen::Vector3d r1 = getNormalizedRay(p);
+            Eigen::Vector3d r2 = seg3D.dir();
+
+            return acos(fmin(fmax(double(r1.dot(r2)),-1.0),1.0));
         }
 
-        unsigned int score = 0;
+        return 0.0;
+    }
 
-        // project into image
-        Eigen::Vector3d proj_C = projectWithCheck(v->C());
+    //------------------------------------------------------------------------------
+    float View::distanceVisualNeighborScore(L3DPP::View* v)
+    {
+        // bring tgt camera center to src coordinate frame
+        Eigen::Vector3d Ctgt_t = R_*v->C()+t_;
 
-        if(proj_C(2) < 0.0f)
-            return 0;
+        // define two planes trough the camera center
+        Eigen::Vector3d n1(1,0,0);
+        Eigen::Vector3d n2(0,1,0);
 
-        // check x coordinate
-        if(proj_C.x() < width_1_3_ || proj_C.x() > 2.0f*width_1_3_)
-            ++score;
+        // compute distances to the planes
+        float dist1 = fabs(n1.dot(Ctgt_t));
+        float dist2 = fabs(n2.dot(Ctgt_t));
 
-        // check y coordinate
-        if(proj_C.y() < height_1_3_ || proj_C.y() > 2.0f*height_1_3_)
-            ++score;
-
-        return score;
+        return dist1+dist2;
     }
 
     //------------------------------------------------------------------------------

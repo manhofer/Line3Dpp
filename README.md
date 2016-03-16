@@ -207,7 +207,19 @@ this option, since it results in more accurate 3D models.
 
 The reconstruction principle of this algorithm is based on geometric reasoning. If you have several images from exactly the same viewpoint in your reconstruction, every 2D line segment match
 among these images makes perfect sense, even if it is wrong. Hence, we need a minimum baseline (Euclidean distance between the camera centers) between any image pair that is considered for matching.
-This value is defined in world coordinates! The default value is 0.01 (i.e. 1cm in a metric reconstruction), which usually works fine for the general case (e.g. when the SfM result is scaled such that the distance between the first two cameras is one, which is usually done in any SfM pipeline when no scale information is available).
+This value is defined in world coordinates! The default value is 0.1 (i.e. 10cm in a metric reconstruction), which usually works fine for the general case (e.g. when the SfM result is scaled such that the distance between the first two cameras is one, which is usually done in any SfM pipeline when no scale information is available).
+
+**Minimum number of images per line cluster** `-v` [`--visibility_t`] (`int`):
+
+By default only 3D lines are considered valid if they are seen in at least three different cameras (i.e. if they have 2D residuals from at least three images). You can change this value using this parameter. Please note that a minimum of three images is always required, since triangulations from just two lines (from two images) can not be verified. If you have a large number of images you can safely increase this value without risking that the reconstruction will turn out to be incomplete, but with a lower risk of outliers.
+
+**Nearest neighbor line matching** `-k` [`--knn_matches`] (`int`):
+
+Line matching in our algorithm is done based on epipolar constraints, without appearance. For an increase in performance, we only consider the k-nearest neighbors as potential matches (with respect to the epipolar overlap). By default k is set to 10. If you want to keep all matches that pass the overlap test, just set k to -1. This might increase the number of reconstructed 3D lines, with a slightly higher runtime.
+
+**Load and store 2D lines** `-l` [`--load_and_store_flag`] (`bool`):
+
+If this parameter is set, the detected 2D line segments are stored in the data folder, and reloaded if the dataset is processed again. This significantly increases the performance after the first run. By default this option is enabled.
 
 Output
 ======

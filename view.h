@@ -96,11 +96,13 @@ namespace L3DPP
         // get optical axis
         Eigen::Vector3d getOpticalAxis();
 
-        // angle between views
+        // angle between views or view and segment (in rad)
         double opticalAxesAngle(L3DPP::View* v);
+        double segmentQualityAngle(const L3DPP::Segment3D seg3D,
+                                   const unsigned int segID);
 
         // computes a projective visual neighbor score (to ensure bigger baselines)
-        unsigned int projectiveVisualNeighborScore(L3DPP::View* v);
+        float distanceVisualNeighborScore(L3DPP::View* v);
 
         // baseline between views
         float baseLine(L3DPP::View* v);

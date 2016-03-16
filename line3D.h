@@ -292,6 +292,9 @@ namespace L3DPP
         // unproject match to 3D segment
         L3DPP::Segment3D unprojectMatch(const L3DPP::Match m, const bool src=true);
 
+        // check match orientation (angle between optical axis and 3D segment)
+        void checkMatchOrientation(const unsigned int src);
+
         // store new matches for other image as well
         void storeInverseMatches(const unsigned int src);
 

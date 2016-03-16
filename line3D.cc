@@ -542,7 +542,7 @@ namespace L3DPP
                 vn.camID_ = vID;
                 vn.score_ = 2.0f*float(num_common_wps)/float(num_worldpoints_[camID]+num_worldpoints_[vID]);
                 vn.axisAngle_ = v->opticalAxesAngle(views_[vID]);
-                vn.projective_score_ = v->projectiveVisualNeighborScore(views_[vID]);
+                vn.distance_score_ = v->distanceVisualNeighborScore(views_[vID]);
 
                 // check baseline
                 if(vn.axisAngle_ < 1.571f && num_common_wps > 3) // ~ PI/2
@@ -573,13 +573,13 @@ namespace L3DPP
                     ++nit;
                 }
 
-                if(num_bigger_t >= min_limit)
-                    neighbors.resize(num_bigger_t);
-                else
-                    neighbors.resize(min_limit);
+                neighbors.resize(num_bigger_t);
 
                 // resort based on projective_score and world_point_score
-                neighbors.sort(L3DPP::sortVisualNeighborsByBothScores);
+                neighbors.sort(L3DPP::sortVisualNeighborsByDistScore);
+
+                if(neighbors.size() > num_neighbors_/2)
+                    neighbors.resize(num_neighbors_/2);
 
                 // combine
                 neighbors.splice(neighbors.end(),neighbors_tmp);
@@ -658,6 +658,12 @@ namespace L3DPP
 
             std::cout << "done!" << std::endl;
 
+            // check matches for orientation
+            if(L3D_DEF_CHECK_MATCH_ORIENTATION)
+            {
+                checkMatchOrientation(it->first);
+            }
+
             // scoring
             float valid_f;
 
@@ -715,6 +721,54 @@ namespace L3DPP
         }
         saveTempResultAsSTL(data_folder_,"best",best_matches);
         */
+    }
+
+    //------------------------------------------------------------------------------
+    void Line3D::checkMatchOrientation(const unsigned int src)
+    {
+        if(matches_.find(src) == matches_.end())
+            return;
+
+        unsigned int num_matches_before = num_matches_[src];
+        unsigned int num_matches = 0;
+#ifdef L3DPP_OPENMP
+        #pragma omp parallel for
+#endif //L3DPP_OPENMP
+        for(size_t i=0; i<matches_[src].size(); ++i)
+        {
+            std::list<L3DPP::Match> remaining;
+
+            std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
+            for(; it!=matches_[src][i].end(); ++it)
+            {
+                L3DPP::Match m = *it;
+
+                // unproject
+                L3DPP::Segment3D seg3D = unprojectMatch(m);
+
+                // check angle
+                double ang = views_[m.src_camID_]->segmentQualityAngle(seg3D,m.src_segID_);
+
+                if(ang > L3D_PI08 && ang < L3D_PI78)
+                {
+                    remaining.push_back(m);
+                }
+            }
+
+            matches_[src][i] = remaining;
+
+            match_mutex_.lock();
+            num_matches += remaining.size();
+            match_mutex_.unlock();
+        }
+
+        num_matches_[src] = num_matches;
+
+        float perc = float(num_matches)/float(num_matches_before)*100.0f;
+
+        std::cout << prefix_ << "filter matches by orientation... ";
+        std::cout << num_matches_before << " --> " << num_matches;
+        std::cout << " (~" << int(perc) << "%)" << std::endl;
     }
 
     //------------------------------------------------------------------------------
