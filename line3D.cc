@@ -562,7 +562,7 @@ namespace L3DPP
                 std::list<L3DPP::VisualNeighbor> neighbors_tmp = neighbors;
 
                 // get max score
-                float score_t = 0.75f*neighbors.front().score_;
+                float score_t = 0.90f*neighbors.front().score_;
                 unsigned int num_bigger_t = 0;
 
                 // count the number of highly similar views
