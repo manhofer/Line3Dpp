@@ -545,7 +545,7 @@ namespace L3DPP
                 vn.distance_score_ = v->distanceVisualNeighborScore(views_[vID]);
 
                 // check baseline
-                if(vn.axisAngle_ < 1.571f && num_common_wps > 3) // ~ PI/2
+                if(vn.axisAngle_ < 1.571f && num_common_wps > 4) // ~ PI/2
                 {
                     neighbors.push_back(vn);
                 }
@@ -555,14 +555,13 @@ namespace L3DPP
             neighbors.sort(L3DPP::sortVisualNeighborsByScore);
 
             // reduce to best neighbors
-            unsigned int min_limit = num_neighbors_ + num_neighbors_/2;
-            if(neighbors.size() > min_limit)
+            if(neighbors.size() > num_neighbors_)
             {
                 // copy neighbors
                 std::list<L3DPP::VisualNeighbor> neighbors_tmp = neighbors;
 
                 // get max score
-                float score_t = 0.90f*neighbors.front().score_;
+                float score_t = 0.80f*neighbors.front().score_;
                 unsigned int num_bigger_t = 0;
 
                 // count the number of highly similar views
