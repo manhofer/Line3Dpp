@@ -80,6 +80,13 @@ namespace L3DPP
             return (hlp_pt-P).norm();
         }
 
+        // translate points
+        void translate(const Eigen::Vector3d t)
+        {
+            P1_ += t;
+            P2_ += t;
+        }
+
         // data access
         Eigen::Vector3d P1() const {return P1_;}
         Eigen::Vector3d P2() const {return P2_;}
@@ -116,6 +123,12 @@ namespace L3DPP
         // update 3D line (after bundling)
         void update3Dline(L3DPP::Segment3D seg3D){
             seg3D_ = seg3D;
+        }
+
+        // translate
+        void translate(const Eigen::Vector3d t)
+        {
+            seg3D_.translate(t);
         }
 
     private:

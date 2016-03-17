@@ -345,6 +345,11 @@ namespace L3DPP
                                  const std::string suffix,
                                  const std::vector<L3DPP::Segment3D> lines3D);
 
+        // translate/untranslate views and 3D models (for better numerical stability)
+        void translate();
+        void untranslate();
+        void performTranslation(const Eigen::Vector3d t);
+
         // basic params
         std::string data_folder_;
         std::string prefix_;
@@ -369,6 +374,7 @@ namespace L3DPP
         std::vector<float> views_avg_depths_;
         float med_scene_depth_;
         float med_scene_depth_lines_;
+        Eigen::Vector3d translation_;
 
         // neighbors
         bool neighbors_by_worldpoints_;

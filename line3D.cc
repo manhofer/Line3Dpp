@@ -18,6 +18,7 @@ namespace L3DPP
         num_lines_total_ = 0;
         med_scene_depth_ = L3D_EPS;
         med_scene_depth_lines_ = 0.0f;
+        translation_ = Eigen::Vector3d(0,0,0);
 
         // default
         collinearity_t_ = L3D_DEF_COLLINEARITY_T;
@@ -433,6 +434,9 @@ namespace L3DPP
             std::cout << prefix_ << "median_scene_depth = " << med_scene_depth_ << std::endl;
         }
 
+        // translate reconstruction (for better numerical stability)
+        translate();
+
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
@@ -487,8 +491,89 @@ namespace L3DPP
 
         computeMatches();
 
+        // translate back
+        untranslate();
+
         view_mutex_.unlock();
         view_reserve_mutex_.unlock();
+    }
+
+    //------------------------------------------------------------------------------
+    void Line3D::translate()
+    {
+        if(views_.size() == 0)
+            return;
+
+        // find median x,y,z coordinates
+        std::vector<std::vector<double> > coords(3);
+        translation_ = Eigen::Vector3d(0,0,0);
+
+#ifdef L3DPP_OPENMP
+        #pragma omp parallel for
+#endif //L3DPP_OPENMP
+        for(size_t i=0; i<3; ++i)
+        {
+            std::map<unsigned int,L3DPP::View*>::iterator it = views_.begin();
+            for(; it!=views_.end(); ++it)
+            {
+                double val = (it->second->C())(i);
+                if(fabs(val) > L3D_EPS)
+                    coords[i].push_back(val);
+            }
+
+            if(coords[i].size() > 0)
+            {
+                std::sort(coords[i].begin(),coords[i].end());
+                translation_(i) = coords[i][coords[i].size()/2];
+            }
+        }
+
+        std::cout << prefix_ << "translation: ";
+        std::cout << -translation_(0) << " ";
+        std::cout << -translation_(1) << " ";
+        std::cout << -translation_(2) << std::endl;
+
+        // apply translation to views and 3D lines
+        performTranslation(-translation_);
+    }
+
+    //------------------------------------------------------------------------------
+    void Line3D::untranslate()
+    {
+        std::cout << prefix_ << "translating back..." << std::endl;
+
+        // untranslate back to the original coordinates
+        performTranslation(translation_);
+    }
+
+    //------------------------------------------------------------------------------
+    void Line3D::performTranslation(const Eigen::Vector3d t)
+    {
+        // translate views
+#ifdef L3DPP_OPENMP
+        #pragma omp parallel for
+#endif //L3DPP_OPENMP
+        for(size_t i=0; i<view_order_.size(); ++i)
+        {
+            views_[view_order_[i]]->translate(t);
+        }
+
+        // translate available 3D lines
+#ifdef L3DPP_OPENMP
+        #pragma omp parallel for
+#endif //L3DPP_OPENMP
+        for(size_t i=0; i<lines3D_.size(); ++i)
+        {
+            L3DPP::FinalLine3D L = lines3D_[i];
+            std::list<L3DPP::Segment3D>::iterator it = L.collinear3Dsegments_.begin();
+            for(; it!=L.collinear3Dsegments_.end(); ++it)
+            {
+                (*it).translate(t);
+            }
+
+            L.underlyingCluster_.translate(t);
+            lines3D_[i] = L;
+        }
     }
 
     //------------------------------------------------------------------------------
@@ -1677,6 +1762,9 @@ namespace L3DPP
 
         std::cout << prefix_ << "reconstructing 3D lines... [diffusion=" << perform_RDD_ << ", CERES=" << use_CERES_ << "]" << std::endl;
 
+        // translate
+        translate();
+
         // find collinear segments (if not already done)
         if(collinearity_t_ > L3D_EPS && (prev_collin_t < L3D_EPS || fabs(prev_collin_t-collinearity_t_) > L3D_EPS))
         {
@@ -1744,6 +1832,9 @@ namespace L3DPP
         filterTinySegments();
 
         std::cout << prefix_ << "3D lines: total=" << lines3D_.size() << std::endl;
+
+        // untranslate
+        untranslate();
 
         view_reserve_mutex_.unlock();
         view_mutex_.unlock();

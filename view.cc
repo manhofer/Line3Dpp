@@ -505,4 +505,11 @@ namespace L3DPP
     {
         return (C_ - v->C()).norm();
     }
+
+    //------------------------------------------------------------------------------
+    void View::translate(const Eigen::Vector3d t)
+    {
+        C_ += t;
+        t_ = -R_ * C_;
+    }
 }

@@ -138,6 +138,9 @@ namespace L3DPP
         // get coordinates of a specific line segment
         Eigen::Vector4f getLineSegment2D(const unsigned int id);
 
+        // translate view by a fixed vector
+        void translate(const Eigen::Vector3d t);
+
         // data access
         unsigned int id(){return id_;}
         Eigen::Vector3d C(){return C_;}
