@@ -83,11 +83,11 @@ namespace L3DPP
     #define L3D_DISP_MATCHES 9
 
     #define L3D_EPS 1e-12
-    #define L3D_PIO2 1.5707963267948966f
-    #define L3D_PI04 0.785398163f
-    #define L3D_PI34 2.35619449f
-    #define L3D_PI08 0.392699082f
-    #define L3D_PI78 2.748893572f
+    #define L3D_PI_1_2 1.5707963267948966f
+    #define L3D_PI_1_4 0.785398163f
+    #define L3D_PI_3_4 2.35619449f
+    #define L3D_PI_1_32 0.098174771f
+    #define L3D_PI_31_32 3.043417886f
 
     //------------------------------------------------------------------------------
     // 2D segment (sortable)

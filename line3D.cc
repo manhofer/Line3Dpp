@@ -121,7 +121,8 @@ namespace L3DPP
         if(std::max(image.cols,image.rows) < L3D_DEF_MIN_IMG_WIDTH)
         {
             display_text_mutex_.lock();
-            std::cout << prefix_err_ << "image is too small for reliable results... (larger side should be >= " << L3D_DEF_MIN_IMG_WIDTH << "px)" << std::endl;
+            std::cout << prefix_err_ << "image is too small for reliable results: " << std::max(image.cols,image.rows);
+            std::cout << "px (larger side should be >= " << L3D_DEF_MIN_IMG_WIDTH << "px)" << std::endl;
             display_text_mutex_.unlock();
             return;
         }
@@ -833,7 +834,7 @@ namespace L3DPP
                 // check angle
                 double ang = views_[m.src_camID_]->segmentQualityAngle(seg3D,m.src_segID_);
 
-                if(ang > L3D_PI08 && ang < L3D_PI78)
+                if(ang > L3D_PI_1_32 && ang < L3D_PI_31_32)
                 {
                     remaining.push_back(m);
                 }
@@ -1787,7 +1788,7 @@ namespace L3DPP
         }
         else
         {
-            med_scene_depth_lines_ = L3D_EPS;
+            med_scene_depth_lines_ = 0.0f;
         }
 
         // compute affinity matrix

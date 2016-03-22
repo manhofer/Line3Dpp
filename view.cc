@@ -279,7 +279,7 @@ namespace L3DPP
     float View::smallerAngle(const Eigen::Vector2d v1, const Eigen::Vector2d v2)
     {
         float angle = acos(fmax(fmin(v1.dot(v2),1.0f),-1.0f));
-        if(angle > L3D_PIO2)
+        if(angle > L3D_PI_1_2)
             angle = M_PI-angle;
 
         return angle;
