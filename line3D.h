@@ -79,7 +79,8 @@ namespace L3DPP
         //                                        and reloaded when the dataset is processed again
         //                            if false -> the line segments are redetected everytime
         // max_img_width            - maximum width (or height, for portrait images) to which images are resized
-        //                            for line segment detection (coordinates will be upscaled afterwards!)
+        //                            for line segment detection (coordinates will be upscaled afterwards!).
+        //                            if set to -1, the images are not resized
         // max_line_segments        - maximum number of 2D line segments per image (sorted by length)
         // neighbors_by_worldpoints - if true  -> matching neighbors (images) are derived from the common worldpoints
         //                            if false -> an explicit list of matching neighbors has to be provided
@@ -87,7 +88,7 @@ namespace L3DPP
         // use_GPU                  - uses the GPU for processing whenever possible (highly recommended, requires CUDA!)
         Line3D(const std::string output_folder,
                const bool load_segments=L3D_DEF_LOAD_AND_STORE_SEGMENTS,
-               const unsigned int max_img_width=L3D_DEF_MAX_IMG_WIDTH,
+               int max_img_width=L3D_DEF_MAX_IMG_WIDTH,
                const unsigned int max_line_segments=L3D_DEF_MAX_NUM_SEGMENTS,
                const bool neighbors_by_worldpoints=true,
                const bool use_GPU=true);
@@ -360,7 +361,7 @@ namespace L3DPP
 
         // line segment detection
         unsigned int max_line_segments_;
-        unsigned int max_image_width_;
+        int max_image_width_;
         bool load_segments_;
         float collinearity_t_;
 

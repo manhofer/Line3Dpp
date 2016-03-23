@@ -4,7 +4,7 @@ namespace L3DPP
 {
     //------------------------------------------------------------------------------
     Line3D::Line3D(const std::string output_folder, const bool load_segments,
-                   const unsigned int max_img_width,
+                   int max_img_width,
                    const unsigned int max_line_segments,
                    const bool neighbors_by_worldpoints,
                    const bool use_GPU)
@@ -269,14 +269,14 @@ namespace L3DPP
         }
 
         // check image size
-        unsigned int max_dim = std::max(imgGray.rows,imgGray.cols);
+        int max_dim = std::max(imgGray.rows,imgGray.cols);
         float upscale_x = 1.0f;
         float upscale_y = 1.0f;
         unsigned int new_width = imgGray.cols;
         unsigned int new_height = imgGray.rows;
 
         cv::Mat imgResized;
-        if(max_dim > max_image_width_)
+        if(max_image_width_ > 0 && max_dim > max_image_width_)
         {
             // rescale
             float s = float(max_image_width_)/float(max_dim);
@@ -1636,7 +1636,7 @@ namespace L3DPP
             std::list<L3DPP::Match>::iterator it = matches.begin();
             for(; it!=matches.end(); ++it)
             {
-                if((*it).score3D_ > L3D_DEF_MIN_SCORE_3D && (*it).score3D_ > score_lim)
+                if((*it).score3D_ > 0.0f && (*it).score3D_ > score_lim)
                 {
                     matches_[src][i].push_back(*it);
 
@@ -2781,7 +2781,10 @@ namespace L3DPP
         std::stringstream str;
         str << "Line3D++__";
 
-        str << "W_" << max_image_width_ << "__";
+        if(max_image_width_ > 0)
+            str << "W_" << max_image_width_ << "__";
+        else
+            str << "W_FULL__";
 
         str << "N_" << num_neighbors_ << "__";
 
