@@ -221,6 +221,10 @@ Line matching in our algorithm is done based on epipolar constraints, without ap
 
 If this parameter is set, the detected 2D line segments are stored in the data folder, and reloaded if the dataset is processed again. This significantly increases the performance after the first run. By default this option is enabled.
 
+**Maximum image width for line detection** `-w` [`--max_image_width`] (`int`):
+
+For an increase in performance, one can reduce the size of the input images during the line segment detection step. For the general case, this does not influence the accuracy or the completeness of the results by a large margin, as long as the images are not made too small. If the parameter value is negative (e.g. `-w -1`) the images are not resized, and the algorithm performs on full resolution (default). However, even when you resize the images the 2D line segment coordinates are upscaled to the full image dimensions. We do not recommend to resize the images to less than approximate FullHD resolution (`-w 1920`), if you aim for accurate reconstruction results.
+
 Output
 ======
 
