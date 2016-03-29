@@ -277,9 +277,9 @@ int main(int argc, char *argv[])
             // load image
             cv::Mat image;
             if(use_full_image_path)
-                image = cv::imread(inputFolder+"/"+fname.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
+                image = cv::imread(inputFolder+"/"+fname,CV_LOAD_IMAGE_GRAYSCALE);
             else
-                image = cv::imread(inputFolder+"/"+img_path.filename().c_str(),CV_LOAD_IMAGE_GRAYSCALE);
+                image = cv::imread(inputFolder+"/"+img_path.filename().string(),CV_LOAD_IMAGE_GRAYSCALE);
 
             // setup intrinsics
             float px = float(image.cols)/2.0f;

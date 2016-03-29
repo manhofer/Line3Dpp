@@ -6,7 +6,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 ##-----------------------------------------------------------------------------
 ## OpenCV
-FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(OpenCV REQUIRED COMPONENTS core imgproc highgui)
 set (EXTRA_INC_DIRS
     ${EXTRA_INC_DIRS}
     ${OpenCV_INCLUDE_DIRS}
@@ -31,14 +31,23 @@ endif(${OpenCV_VERSION_MAJOR} GREATER "2")
 
 ##-----------------------------------------------------------------------------
 ## Eigen
-FIND_PACKAGE(Eigen REQUIRED)
+set(EIGEN3_ROOT_DIR "" CACHE PATH "include (root) directory of the Eigen lib")
+
+if ("${EIGEN3_ROOT_DIR}" STREQUAL "")
+  # Eigen directory not set
+  message("Eigen3 include dir not set... trying to find it...")
+  FIND_PACKAGE(Eigen REQUIRED)
+else ("${EIGEN3_ROOT_DIR}" STREQUAL "")
+  message("Eigen3 include dir set to: " ${EIGEN3_ROOT_DIR})
+  SET( EIGEN3_INCLUDE_DIR "${EIGEN3_ROOT_DIR}" )
+endif ("${EIGEN3_ROOT_DIR}" STREQUAL "")
 
 set (EXTRA_INC_DIRS
     ${EXTRA_INC_DIRS}
     ${EIGEN3_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}/unsupported
+    ${EIGEN3_INCLUDE_DIR}/eigen3
 )
-include_directories(${EIGEN3_INCLUDE_DIR})
 
 ##-----------------------------------------------------------------------------
 ## CUDA
@@ -59,11 +68,24 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 ##-----------------------------------------------------------------------------
 ## Boost
-set(Boost_USE_STATIC_LIBS        OFF)
-set(Boost_USE_STATIC_RUNTIME     OFF)
+set(BOOST_LIBRARY_DIR "" CACHE PATH " directory of the boost lib")
+set(BOOST_INCLUDE_DIR "" CACHE PATH " directory of the boost headers")
+SET(BOOST_LIBRARYDIR "${BOOST_LIBRARY_DIR}")
+SET(BOOST_INCLUDEDIR "${BOOST_INCLUDE_DIR}")
+
+if ("${BOOST_LIBRARY_DIR}" STREQUAL "" OR "${BOOST_INCLUDE_DIR}" STREQUAL "")
+  message("BOOST library dir not set... trying to find it...")  
+endif ("${BOOST_LIBRARY_DIR}" STREQUAL "" OR "${BOOST_INCLUDE_DIR}" STREQUAL "")
+
+IF( WIN32 )
+  SET(Boost_USE_STATIC_LIBS ON)
+ENDIF( WIN32 )
+
 FIND_PACKAGE(Boost REQUIRED COMPONENTS serialization filesystem system thread)
 
 if(Boost_FOUND)
+        message("boost include dirs: " ${Boost_INCLUDE_DIRS})
+        message("boost libraries:    " ${Boost_LIBRARIES})
         set (EXTRA_INC_DIRS
                 ${EXTRA_INC_DIRS}
                 ${Boost_INCLUDE_DIRS}
@@ -84,14 +106,53 @@ if(Ceres_FOUND)
 endif(Ceres_FOUND)
 
 if(NOT Ceres_FOUND AND WIN32)
-  # use precompiled CERES version
-  set(PRECOMPILED_DIR ${CMAKE_SOURCE_DIR}/libs/precompiled)
+
+  message("ceres not found, try to define it manually...")
+
+  # set ceres lib and include dir manually
+  set(CERES_LIBRARY "" CACHE FILEPATH "path to the ceres.lib")
+  set(CERES_ROOT "" CACHE PATH "path to the ceres include dir")
+  
+  if (NOT "${CERES_LIBRARY}" STREQUAL "" AND NOT "${CERES_ROOT}" STREQUAL "")
+     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${CERES_LIBRARY})
+     include_directories(${CERES_ROOT})
+     message("ceres include dir: " ${CERES_ROOT})
+     message("ceres_lib:         " ${CERES_LIBRARY})
+  endif (NOT "${CERES_LIBRARY}" STREQUAL "" AND NOT "${CERES_ROOT}" STREQUAL "")
 
   # only 64bit CERES is included
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+  if( "${CERES_LIBRARY}" STREQUAL "" AND CMAKE_SIZEOF_VOID_P EQUAL 8 )
+  
+      message("using precompiled ceres.... (WIN64 only)")
+      
+      # set glog lib and include dir
+      set(GLOG_LIBRARY "" CACHE FILEPATH "path to the glog.lib")
+      set(GLOG_ROOT "" CACHE PATH "path to the glog build dir")
+    
+      if (NOT "${GLOG_LIBRARY}" STREQUAL "" AND NOT "${GLOG_ROOT}" STREQUAL "")
+         set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${GLOG_LIBRARY})
+         include_directories(${GLOG_ROOT})
+         message("glog build dir: " ${GLOG_ROOT})
+         message("glog_lib:       " ${GLOG_LIBRARY})
+      endif (NOT "${GLOG_LIBRARY}" STREQUAL "" AND NOT "${GLOG_ROOT}" STREQUAL "")
+    
+      # set gflags lib and include dir
+      set(GFLAGS_LIBRARY "" CACHE FILEPATH "path to the gflags_*.lib")
+      set(GFLAGS_ROOT "" CACHE PATH "path to the gflags include dir")
+      
+      if (NOT "${GFLAGS_LIBRARY}" STREQUAL "" AND NOT "${GFLAGS_ROOT}" STREQUAL "")
+         set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${GFLAGS_LIBRARY})
+         include_directories(${GFLAGS_ROOT})
+         message("gflags build dir: " ${GFLAGS_ROOT})
+         message("gflags_lib:       " ${GFLAGS_LIBRARY})
+      endif (NOT "${GFLAGS_LIBRARY}" STREQUAL "" AND NOT "${GFLAGS_ROOT}" STREQUAL "")
+      
+    # use precompiled CERES version
+    set(PRECOMPILED_DIR ${CMAKE_SOURCE_DIR}/libs/precompiled)
+    
     set(PRECOMPILED_LIB lib64)
     set(PRECOMPILED_LIB_DIR_FILTER bin64/ )
-    deep_copy_file(${PRECOMPILED_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE} dll ${PRECOMPILED_LIB_DIR_FILTER} release)
+    #deep_copy_file(${PRECOMPILED_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE} dll ${PRECOMPILED_LIB_DIR_FILTER} release)
 
     UNSET(CERES_LIBDIR CACHE)
     FIND_PATH(CERES_LIBDIR NAMES ceres.lib PATHS ${PRECOMPILED_DIR}/ceres/${PRECOMPILED_LIB}/vc10)
@@ -104,8 +165,9 @@ if(NOT Ceres_FOUND AND WIN32)
       link_directories(${CERES_LIBDIR})
       set(Ceres_FOUND 1)
     endif(CERES_LIBDIR AND CERES_INCLUDE_DIR)
-    
-  endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+  elseif( "${CERES_LIBRARY}" STREQUAL "" AND CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    message("Sorry... precompiled ceres only functioning with 64 bit!")  
+  endif( "${CERES_LIBRARY}" STREQUAL "" AND CMAKE_SIZEOF_VOID_P EQUAL 8 )
 		   
 endif(NOT Ceres_FOUND AND WIN32)
 
@@ -122,7 +184,21 @@ ENDIF(OPENMP_FOUND)
 ## RapidJSON
 FIND_PACKAGE(RapidJSON)
 
+##-----------------------------------------------------------------------------
+## tclap
+set(TCLAP_INCLUDE_DIR "" CACHE PATH "include directory of tclap")
+if (NOT "${TCLAP_INCLUDE_DIR}" STREQUAL "")
+  set (EXTRA_INC_DIRS
+                ${EXTRA_INC_DIRS}
+                ${TCLAP_INCLUDE_DIR}
+        )
+endif (NOT "${TCLAP_INCLUDE_DIR}" STREQUAL "")
+
 add_definitions(-frounding-math)
+
+##-----------------------------------------------------------------------------
+## specify all extra inlcude dirs
+include_directories(${EXTRA_INC_DIRS})
 
 ## switches for external (optional) libs
 IF(CUDA_FOUND)
@@ -173,16 +249,31 @@ ELSE(L3DPP_CUDA)
         SET(Line3D_SOURCES line3D.cc view.cc optimization.cc sparsematrix.cc clustering.cc)
 ENDIF(L3DPP_CUDA)
 
-IF(L3DPP_CUDA)
-  CUDA_ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
-ELSE(L3DPP_CUDA)
-  ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
-ENDIF(L3DPP_CUDA)
+IF(NOT WIN32)
+  # shared
+  IF(L3DPP_CUDA)
+    CUDA_ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
+  ELSE(L3DPP_CUDA)
+    ADD_LIBRARY(line3Dpp SHARED ${Line3D_SOURCES} ${Line3D_HEADERS})
+  ENDIF(L3DPP_CUDA)
+ELSE(NOT WIN32)
+  # static
+  IF(L3DPP_CUDA)
+    CUDA_ADD_LIBRARY(line3Dpp ${Line3D_SOURCES} ${Line3D_HEADERS})
+  ELSE(L3DPP_CUDA)
+    ADD_LIBRARY(line3Dpp ${Line3D_SOURCES} ${Line3D_HEADERS})
+  ENDIF(L3DPP_CUDA)
+ENDIF(NOT WIN32)
 target_link_libraries(line3Dpp ${ALL_LIBRARIES})
 
 option(APP_LINE_3D++_BUILD_EXECUTABLES "Line3D++: build executables" ON)
 
 IF(APP_LINE_3D++_BUILD_EXECUTABLES)
+
+IF( WIN32 )
+  # prevents multiple definition problems in windows via MinGW
+  SET(CMAKE_EXE_LINKER_FLAGS "-static")
+ENDIF( WIN32 )
 
 #----- Add main for VisualSfM --------
 add_executable(runLine3Dpp_vsfm main_vsfm.cpp)

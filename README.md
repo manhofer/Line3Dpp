@@ -48,7 +48,7 @@ Requirements
 
 * CUDA (optional)
 * OpenMP (optional)
-* Ceres-Solver (optional, **must be built as shared library on UNIX systems! On Windows a precompiled lib is included**)
+* Ceres-Solver (optional, **must be built as shared library on UNIX systems!**)
 * RapidJSON (optional, for OpenMVG executable only)
 
 The code has been tested under **Ubuntu 14.04 LTS** with the following versions:
@@ -65,8 +65,8 @@ with the provided `CMakeLists.txt`, but it has not been tested by us!
 We highly recommend that you also install the optional requirements (especially CUDA, if possible), which significantly boosts the performance and
 also improves the quality of the 3D model (when the Ceres-Solver is available).
 
-Building
-========
+Building on Linux Systems
+=========================
 
 When all required libraries and CMake are properly installed, building the Line3D++ library and the executables should be straightforward.
 Just open a terminal in the Line3D++ source directory and type:
@@ -79,6 +79,32 @@ Just open a terminal in the Line3D++ source directory and type:
 You can change the compile settings (i.e. whether to use CUDA or not) by using CMake. Most comfortably, you can do this using the CMake GUI (Ubuntu package: `cmake-qt-gui`).
 
 **Note:** If you get compile errors that say something like `data.__outbuf[-1] == '\0'`, or linker errors that have something to do with shared libraries, the most probable cause is that the CERES-Solver was not built as a shared library, but a static one (default in version 1.8.0). You have to change this in the `CMakeLists.txt` of CERES (`BUILD_SHARED_LIBRARIES`), or disable CERES for Line3D++ (--> CMake).
+
+Building on Windows Systems
+===========================
+
+In contrast to Linux systems (see above), building on Windows is usually slightly more complicated. We know that it runs on **Windows 10** with the **MinGW** (http://www.mingw.org/) build environment. We also tried to build it with **Visual Studio 2015**, but ran into some unresolved problems with OpenMP and Eigen. However, if you have a sane build environment and you set the following CMake variables properly, building should be no problem.
+
+## OpenCV
+Set `OPENCV_DIR` to the build folder of your OpenCV installation.
+
+## Eigen
+Set `EIGEN3_ROOT_DIR` to the include (root) directory of your Eigen3 installation.
+
+## Boost
+Set `BOOST_LIBRARY_DIR` to the lib directory of your boost installation, and `BOOST_INCLUDE_DIR` to the directory with the boost headers.
+
+## tclap
+Set `TCLAP_INCLUDE_DIR` to the tclap include directory (does not require an installation).
+
+These variables should be enough to build a basic version of Line3D++ (without CUDA and Ceres). We were not able to try CUDA and Windows, since our testing environment does not have an nVidia graphics card. However, the included CMake configuration file should be able to properly identify a valid CUDA installation on its own. If not, please drop us a message.
+
+The last thing is the Ceres solver. It is not an incredibly important part of the pipeline, but can potentially improve the results by a small margin.
+
+## Ceres
+Set `CERES_LIBRARY` to the `ceres.lib` file, and `CERES_ROOT` to the ceres include directory. There is also a precompiled version of the `ceres.lib` available in the libs folder, but it only works for **64bit** environments! Either way, the two libraries **gflags** (http://gflags.github.io/gflags/) and **glog** (https://github.com/google/glog) must be properly installed (you can set the respective lib/include directories in CMake as well).
+
+**Note:** You can disable Ceres, OpenMP, or CUDA in CMake in case that one of these components is not found (or can't be installed). In addition, the Line3D++ basic library is built as a **static library** on Windows, since this seems to be less problematic with linking etc. If you run into any problems, or have any suggestions how we can improve the `CMakeLists.txt` for Windows systems, just send us a message. 
 
 License
 =======
