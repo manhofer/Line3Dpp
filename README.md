@@ -30,9 +30,6 @@ If you use our algorithm in any of your publications or projects, please cite ou
     In Computer Vision and Image Understanding (CVIU), 2016.
     http://www.sciencedirect.com/science/article/pii/S1077314216300236
 
-**Note:** Line3D++ is not completely identical to the algorithm described in the paper above (*Line3D*), but rather a modified and extended version,
-with similar core principles. The original version can be found here: http://github.com/manhofer/Line3D (*not updated anymore*).
-
 Requirements
 ============
 
