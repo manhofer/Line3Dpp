@@ -58,9 +58,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * ====================
  * Line-based Multi-view Stereo
  * Reference:
- * "Line3D: Efficient 3D Scene Abstraction for the Built Environment"
+ * "Efficient 3D Scene Abstraction Using Line Segments"
  * Manuel Hofer, Michael Maurer, Horst Bischof,
- * German Conference on Pattern Recognition (GCPR), 2015.
+ * Computer Vision and Image Understanding (CVIU), 2016.
  * ====================
  * Author: M.Hofer, 2015
  */
