@@ -166,7 +166,6 @@ int main(int argc, char *argv[])
     std::map<unsigned int,Eigen::Matrix3d> cams_K;
     std::map<unsigned int,Eigen::Vector3d> cams_radial;
     std::map<unsigned int,Eigen::Vector2d> cams_tangential;
-    std::vector<unsigned int> img_seq;
 
     while(std::getline(cameras_file,cameras_line))
     {
@@ -215,7 +214,7 @@ int main(int argc, char *argv[])
                 k3 = 0;
                 p1 = 0; p2 = 0;
             }
-            else if(model.compare("OPENCV") == 0 || model.compare("OPENCV_FISHEYE") == 0)
+            else if(model.compare("OPENCV") == 0)
             {
                 // fx,fy,cx,cy,k1,k2,p1,p2
                 cameras_stream >> fx >> fy >> cx >> cy >> k1 >> k2 >> p1 >> p2;
@@ -241,13 +240,11 @@ int main(int argc, char *argv[])
             cams_K[camID] = K;
             cams_radial[camID] = Eigen::Vector3d(k1,k2,k3);
             cams_tangential[camID] = Eigen::Vector2d(p1,p2);
-
-            img_seq.push_back(camID);
         }
     }
     cameras_file.close();
 
-    std::cout << "found " << cams_K.size() << " images in [cameras.txt]" << std::endl;
+    std::cout << "found " << cams_K.size() << " cameras in [cameras.txt]" << std::endl;
 
     // read images.txt
     std::ifstream images_file;
@@ -257,10 +254,12 @@ int main(int argc, char *argv[])
     std::map<unsigned int,Eigen::Matrix3d> cams_R;
     std::map<unsigned int,Eigen::Vector3d> cams_t;
     std::map<unsigned int,Eigen::Vector3d> cams_C;
+    std::map<unsigned int,unsigned int> img2cam;
     std::map<unsigned int,std::string> cams_images;
     std::map<unsigned int,std::list<unsigned int> > cams_worldpoints;
     std::map<unsigned int,Eigen::Vector3d> wps_coords;
-    unsigned int camID;
+    std::vector<unsigned int> img_seq;
+    unsigned int imgID,camID;
 
     bool first_line = true;
     while(std::getline(images_file,images_line))
@@ -272,7 +271,6 @@ int main(int argc, char *argv[])
             if(first_line)
             {
                 // image data
-                unsigned int imgID;
                 double qw,qx,qy,qz,tx,ty,tz;
                 std::string img_name;
 
@@ -285,10 +283,12 @@ int main(int argc, char *argv[])
                     Eigen::Vector3d t(tx,ty,tz);
                     Eigen::Vector3d C = (R.transpose()) * (-1.0 * t);
 
-                    cams_R[camID] = R;
-                    cams_t[camID] = t;
-                    cams_C[camID] = C;
-                    cams_images[camID] = img_name;
+                    cams_R[imgID] = R;
+                    cams_t[imgID] = t;
+                    cams_C[imgID] = C;
+                    cams_images[imgID] = img_name;
+                    img2cam[imgID] = camID;
+                    img_seq.push_back(imgID);
                 }
 
                 first_line = false;
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
                         }
                     }
 
-                    cams_worldpoints[camID] = wps;
+                    cams_worldpoints[imgID] = wps;
                 }
 
                 first_line = true;
@@ -369,22 +369,23 @@ int main(int argc, char *argv[])
     for(unsigned int i=0; i<img_seq.size(); ++i)
     {
         // get camera params
-        unsigned int camID = img_seq[i];
+        unsigned int imgID = img_seq[i];
+        unsigned int camID = img2cam[imgID];
 
         // intrinsics
         Eigen::Matrix3d K = cams_K[camID];
         Eigen::Vector3d radial = cams_radial[camID];
         Eigen::Vector2d tangential = cams_tangential[camID];
 
-        if(cams_R.find(camID) != cams_R.end())
+        if(cams_R.find(imgID) != cams_R.end())
         {
             // extrinsics
-            Eigen::Matrix3d R = cams_R[camID];
-            Eigen::Vector3d t = cams_t[camID];
-            Eigen::Vector3d C = cams_C[camID];
+            Eigen::Matrix3d R = cams_R[imgID];
+            Eigen::Vector3d t = cams_t[imgID];
+            Eigen::Vector3d C = cams_C[imgID];
 
             // read image
-            cv::Mat image = cv::imread(inputFolder+"/"+cams_images[camID],CV_LOAD_IMAGE_GRAYSCALE);
+            cv::Mat image = cv::imread(inputFolder+"/"+cams_images[imgID],CV_LOAD_IMAGE_GRAYSCALE);
 
             // undistort image
             cv::Mat img_undist;
@@ -401,9 +402,9 @@ int main(int argc, char *argv[])
             }
 
             // compute depths
-            if(cams_worldpoints.find(camID) != cams_worldpoints.end())
+            if(cams_worldpoints.find(imgID) != cams_worldpoints.end())
             {
-                std::list<unsigned int> wps_list = cams_worldpoints[camID];
+                std::list<unsigned int> wps_list = cams_worldpoints[imgID];
                 std::vector<float> depths;
 
                 std::list<unsigned int>::iterator it = wps_list.begin();
@@ -419,7 +420,7 @@ int main(int argc, char *argv[])
                     float med_depth = depths[depths.size()/2];
 
                     // add image
-                    Line3D->addImage(camID,img_undist,K,R,t,med_depth,wps_list);
+                    Line3D->addImage(imgID,img_undist,K,R,t,med_depth,wps_list);
                 }
             }
         }
