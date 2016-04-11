@@ -19,7 +19,8 @@ For your convenience, there are several example executables included that can di
 * bundler   - http://www.cs.cornell.edu/~snavely/bundler/
 * Pix4D     - https://pix4d.com/
 * mavmap    - https://github.com/mavmap/mavmap/
-* OpenMVG    - https://github.com/openMVG/openMVG/
+* OpenMVG   - https://github.com/openMVG/openMVG/
+* colmap    - https://github.com/colmap/colmap
 
 More information about Line3D++ and its usage can be found below.
 
@@ -54,7 +55,7 @@ The code has been tested under **Ubuntu 14.04 LTS** with the following versions:
 * Eigen==3.2.0
 * OpenCV=={2.4.10, 3.0}
 * CUDA=={5.0, 5.5, 6.0}
-* Ceres-Solver==1.8.0
+* Ceres-Solver=={1.8.0, 1.12.0}
 
 Basically, the Ubuntu system packages should be fine (whenever available). Building on Windows or MacOS systems should be possible as well
 with the provided `CMakeLists.txt`, but it has not been tested by us!
@@ -196,6 +197,13 @@ This executable reads OpenMVG results in the form of an `sfm_data.json` file (pa
 **Note:** This executable is only available when [RapidJSON](https://github.com/miloyip/rapidjson) is properly installed.
 
 	./runLine3Dpp_openmvg -i <image_folder> -j <full_path_to_sfm_data_file>
+
+### colmap
+
+This executable reads colmap results in the form of three txt files `cameras.txt`, `images.txt`, and `points3D.txt`, stored in an sfm result folder (`-m`).
+If the result folder is not specified, it is assumed that these files are located in the image folder (`-i`).
+
+	./runLine3Dpp_colmap -i <image_folder> [-m <sfm_result_folder>]
 
 All additional command line parameters are optional. They correspond to the parameters of the algorithm itself, and their meaning can be found in the `line3d.h` main header
 (above the function definition, in which the parameters are needed). In addition, the most important parameters are listed below.

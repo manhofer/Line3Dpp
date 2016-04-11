@@ -147,10 +147,10 @@ namespace L3DPP
                 dy /= d;
 
                 // angle weight
-                T dotp = ceres::min(ceres::max(dx*observed_norm_dir_x_+dy*observed_norm_dir_y_,T(-0.9999)),T(0.9999));
+                T dotp = dx*observed_norm_dir_x_+dy*observed_norm_dir_y_;
                 T angle = ceres::acos(dotp);
 
-                if(!ceres::IsNaN(angle))
+                if(!ceres::IsNaN(angle) && !ceres::IsInfinite(angle))
                 {
                     if(angle > T(M_PI_2))
                         angle = T(M_PI)-angle;

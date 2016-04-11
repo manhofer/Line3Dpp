@@ -295,6 +295,11 @@ add_executable(runLine3Dpp_pix4d main_pix4d.cpp)
 target_link_libraries(runLine3Dpp_pix4d line3Dpp)
 target_link_libraries(runLine3Dpp_pix4d ${ALL_LIBRARIES})
 
+#----- Add main for colmap --------
+add_executable(runLine3Dpp_colmap main_colmap.cpp)
+target_link_libraries(runLine3Dpp_colmap line3Dpp)
+target_link_libraries(runLine3Dpp_colmap ${ALL_LIBRARIES})
+
 #----- Add main for OpenMVG --------
 IF(RapidJSON_FOUND)
 add_executable(runLine3Dpp_openmvg main_openmvg.cpp)

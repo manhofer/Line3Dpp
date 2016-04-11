@@ -2749,6 +2749,33 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
+    Eigen::Matrix3d Line3D::rotationFromQ(const double Qw, const double Qx,
+                                          const double Qy, const double Qz)
+    {
+        double n = Qw*Qw + Qx*Qx + Qy*Qy + Qz*Qz;
+
+        double s;
+        if(fabs(n) < L3D_EPS)
+        {
+            s = 0;
+        }
+        else
+        {
+            s = 2.0/n;
+        }
+
+        double wx = s*Qw*Qx; double wy = s*Qw*Qy; double wz = s*Qw*Qz;
+        double xx = s*Qx*Qx; double xy = s*Qx*Qy; double xz = s*Qx*Qz;
+        double yy = s*Qy*Qy; double yz = s*Qy*Qz; double zz = s*Qz*Qz;
+
+        Eigen::Matrix3d R;
+        R(0,0) = 1.0 - (yy + zz); R(0,1) = xy - wz;         R(0,2) = xz + wy;
+        R(1,0) = xy + wz;         R(1,1) = 1.0 - (xx + zz); R(1,2) = yz - wx;
+        R(2,0) = xz - wy;         R(2,1) = yz + wx;         R(2,2) = 1.0 - (xx + yy);
+        return R;
+    }
+
+    //------------------------------------------------------------------------------
     Eigen::Vector4f Line3D::getSegmentCoords2D(const L3DPP::Segment2D seg2D)
     {
         Eigen::Vector4f coords(0,0,0,0);

@@ -231,6 +231,10 @@ namespace L3DPP
         Eigen::Matrix3d rotationFromRPY(const double roll, const double pitch,
                                         const double yaw);
 
+        // rotation matrix from a quaternion
+        Eigen::Matrix3d rotationFromQ(const double Qw, const double Qx,
+                                      const double Qy, const double Qz);
+
         // create an output filename based on the current parameter settings
         std::string createOutputFilename();
 
