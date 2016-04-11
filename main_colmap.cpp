@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<std::string> sfmArg("m", "sfm_folder", "full path to the colmap result files (cameras.txt, images.txt, and points3D.txt), if not specified --> input_folder", false, "", "string");
     cmd.add(sfmArg);
 
-    TCLAP::ValueArg<std::string> outputArg("o", "output_folder", "folder where result and temporary files are stored (if not specified --> input_folder+'/Line3D++/')", false, "", "string");
+    TCLAP::ValueArg<std::string> outputArg("o", "output_folder", "folder where result and temporary files are stored (if not specified --> sfm_folder+'/Line3D++/')", false, "", "string");
     cmd.add(outputArg);
 
     TCLAP::ValueArg<int> scaleArg("w", "max_image_width", "scale image down to fixed max width for line segment detection", false, L3D_DEF_MAX_IMG_WIDTH, "int");
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
     std::string outputFolder = outputArg.getValue().c_str();
     if(outputFolder.length() == 0)
-        outputFolder = inputFolder+"/Line3D++/";
+        outputFolder = sfmFolder+"/Line3D++/";
 
     int maxWidth = scaleArg.getValue();
     unsigned int neighbors = std::max(neighborArg.getValue(),2);
