@@ -22,6 +22,8 @@ namespace L3DPP
         // initialize problem
         ceres::Problem* problem = new ceres::Problem();
 
+        std::vector<bool> keep_const(clusters3D_->size());
+
         // lines
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
@@ -62,10 +64,27 @@ namespace L3DPP
             Eigen::Vector3d s(sx(2,1),sx(0,2),sx(1,0));
             double omega = m.norm();
 
-            lines[i * LINE_SIZE + 0] = omega;
-            lines[i * LINE_SIZE + 1] = s(0);
-            lines[i * LINE_SIZE + 2] = s(1);
-            lines[i * LINE_SIZE + 3] = s(2);
+            if(isnan(s(0)) || isnan(s(1)) || isnan(s(2)) || isnan(omega))
+            {
+                // symmetric line coords... do not bundle
+                lines[i * LINE_SIZE + 0] = -1;
+                lines[i * LINE_SIZE + 1] = 0;
+                lines[i * LINE_SIZE + 2] = 0;
+                lines[i * LINE_SIZE + 3] = 0;
+
+                // set constant
+                keep_const[i] = true;
+            }
+            else
+            {
+                lines[i * LINE_SIZE + 0] = omega;
+                lines[i * LINE_SIZE + 1] = s(0);
+                lines[i * LINE_SIZE + 2] = s(1);
+                lines[i * LINE_SIZE + 3] = s(2);
+
+                // bundle
+                keep_const[i] = false;
+            }
 
             tmp_pts[i * 6 + 0] = LC.seg3D().P1().x();
             tmp_pts[i * 6 + 1] = LC.seg3D().P1().y();
@@ -162,6 +181,18 @@ namespace L3DPP
             problem->SetParameterBlockConstant(uc_it->first);
         }
 
+        // set badly conditioned lines as constant
+        unsigned int num_const = 0;
+        for(size_t i=0; i<keep_const.size(); ++i)
+        {
+            if(keep_const[i])
+            {
+                problem->SetParameterBlockConstant(lines +i*LINE_SIZE);
+                ++num_const;
+            }
+        }
+        std::cout << prefix_ << "#unoptimizable_lines = " << num_const << std::endl;
+
         // solve
         ceres::Solver::Options options;
         options.max_num_iterations = max_iter_;
@@ -196,7 +227,7 @@ namespace L3DPP
                                    tmp_pts[i * 6 + 5]);
 
             Eigen::Vector3d P1,P2;
-            if(fabs(omega) < L3D_EPS)
+            if(omega < 0.0 || fabs(omega) < L3D_EPS)
             {
                 // keep original coords
                 P1 = P1_old;

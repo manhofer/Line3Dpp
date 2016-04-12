@@ -2287,7 +2287,7 @@ namespace L3DPP
     void Line3D::optimizeClusters()
     {
 #ifdef L3DPP_CERES
-        L3DPP::LineOptimizer opt(views_,&clusters3D_,max_iter_CERES_);
+        L3DPP::LineOptimizer opt(views_,&clusters3D_,max_iter_CERES_,prefix_);
         opt.optimize();
 #endif //L3DPP_CERES
     }

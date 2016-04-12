@@ -81,6 +81,7 @@ namespace L3DPP
             // convert to Plücker coordinates
             T sx = line[1]; T sy = line[2]; T sz = line[3];
             T omega = line[0];
+
             T nm = sx*sx+sy*sy+sz*sz;
             T div = T(1.0)/T(1.0+nm);
 
@@ -180,8 +181,10 @@ namespace L3DPP
     public:
         LineOptimizer(std::map<unsigned int,L3DPP::View*> views,
                       std::vector<L3DPP::LineCluster3D>* clusters3D,
-                      const unsigned int max_iter) :
-            views_(views), clusters3D_(clusters3D), max_iter_(max_iter){}
+                      const unsigned int max_iter,
+                      const std::string prefix) :
+            views_(views), clusters3D_(clusters3D),
+            max_iter_(max_iter), prefix_(prefix){}
 
         // solve the bundling problem
         void optimize();
@@ -190,6 +193,7 @@ namespace L3DPP
         std::map<unsigned int,L3DPP::View*> views_;
         std::vector<L3DPP::LineCluster3D>* clusters3D_;
         unsigned int max_iter_;
+        std::string prefix_;
     };
 }
 
