@@ -6,7 +6,21 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 ##-----------------------------------------------------------------------------
 ## OpenCV
-FIND_PACKAGE(OpenCV REQUIRED COMPONENTS core imgproc highgui)
+FIND_PACKAGE(OpenCV REQUIRED)
+
+# check for OpenCV >= 3
+if(${OpenCV_VERSION_MAJOR} GREATER "2")
+  FIND_PACKAGE(OpenCV REQUIRED COMPONENTS core imgproc highgui imgcodecs)
+  message("using LSD from OpenCV 3")
+  SET(L3DPP_OPENCV3 1)
+else(${OpenCV_VERSION_MAJOR} GREATER "2")
+  FIND_PACKAGE(OpenCV REQUIRED COMPONENTS core imgproc highgui)
+  SET(lsd_SOURCES lsd/lsd.cpp lsd/lsd_opencv.cpp lsd/lsd_wrap.cpp)
+  SET(lsd_HEADERS lsd/lsd.hpp lsd/lsd_opencv.hpp lsd/lsd_wrap.hpp)
+  add_library(line3Dpp_lsd SHARED ${lsd_SOURCES} ${lsd_HEADERS})
+  target_link_libraries(line3Dpp_lsd ${OpenCV_LIBS})
+endif(${OpenCV_VERSION_MAJOR} GREATER "2")
+
 set (EXTRA_INC_DIRS
     ${EXTRA_INC_DIRS}
     ${OpenCV_INCLUDE_DIRS}
@@ -17,17 +31,6 @@ set (EXTRA_LIBRARIES
 )
 
 link_directories(${OPENCV_LIB_DIR})
-
-# check for OpenCV >= 3
-if(${OpenCV_VERSION_MAJOR} GREATER "2")
-  message("using LSD from OpenCV 3")
-  SET(L3DPP_OPENCV3 1)
-else(${OpenCV_VERSION_MAJOR} GREATER "2")
-  SET(lsd_SOURCES lsd/lsd.cpp lsd/lsd_opencv.cpp lsd/lsd_wrap.cpp)
-  SET(lsd_HEADERS lsd/lsd.hpp lsd/lsd_opencv.hpp lsd/lsd_wrap.hpp)
-  add_library(line3Dpp_lsd SHARED ${lsd_SOURCES} ${lsd_HEADERS})
-  target_link_libraries(line3Dpp_lsd ${OpenCV_LIBS})
-endif(${OpenCV_VERSION_MAJOR} GREATER "2")
 
 ##-----------------------------------------------------------------------------
 ## Eigen
