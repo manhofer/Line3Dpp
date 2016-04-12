@@ -215,11 +215,13 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    std::string cam_model;
     for(rapidjson::SizeType i=0; i<intr.Size(); ++i)
     {
         rapidjson::Value& array_element = intr[i];
         rapidjson::Value& intr_data = array_element["value"]["ptr_wrapper"]["data"];
-        std::string cam_model = array_element["value"]["polymorphic_name"].GetString();
+        if (array_element["value"].HasMember("polymorphic_name"))
+          cam_model = array_element["value"]["polymorphic_name"].GetString();
         unsigned int groupID = array_element["key"].GetUint();
 
         bool distorted = false;
