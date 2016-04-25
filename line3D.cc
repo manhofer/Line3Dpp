@@ -298,7 +298,7 @@ namespace L3DPP
         std::stringstream str;
         if(load_segments_)
         {
-            str << data_folder_ << "segments_L3D++_" << camID << "_" << new_width << "x" << new_height << ".bin";
+            str << data_folder_ << "segments_L3D++_" << camID << "_" << new_width << "x" << new_height << "_" << L3D_DEF_MAX_NUM_SEGMENTS << ".bin";
 
             boost::filesystem::path file(str.str());
             if(boost::filesystem::exists(file))
