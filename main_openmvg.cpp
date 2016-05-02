@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
                 K_matrices.find(intID) != K_matrices.end())
         {
             // load image
-            cv::Mat image = cv::imread(cams_imgFilenames[i]);
+            cv::Mat image = cv::imread(cams_imgFilenames[i],CV_LOAD_IMAGE_GRAYSCALE);
 
             // intrinsics
             Eigen::Matrix3d K = K_matrices[intID];

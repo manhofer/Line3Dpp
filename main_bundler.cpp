@@ -48,11 +48,14 @@ int main(int argc, char *argv[])
 {
     TCLAP::CmdLine cmd("LINE3D++");
 
-    TCLAP::ValueArg<std::string> inputArg("i", "image_folder", "folder containing the images", true, ".", "string");
+    TCLAP::ValueArg<std::string> inputArg("i", "image_folder", "folder containing the images (be carefull with the path if an image list is used!)", true, ".", "string");
     cmd.add(inputArg);
 
     TCLAP::ValueArg<std::string> bundleFileArg("b", "bundle_file", "full path to the bundle.*.out file (if not specified -> image_folder/../bundle.rd.out)", false, "", "string");
     cmd.add(bundleFileArg);
+
+    TCLAP::ValueArg<std::string> imgListFileArg("f", "img_list", "full path to an optional image list (e.g. for the Dubrovnik6K dataset)", false, "", "string");
+    cmd.add(imgListFileArg);
 
     TCLAP::ValueArg<std::string> extArg("t", "image_extension", "image extension (case sensitive), if not specified: jpg, png or bmp expected", false, "", "string");
     cmd.add(extArg);
@@ -110,6 +113,7 @@ int main(int argc, char *argv[])
     std::string imageFolder = inputArg.getValue().c_str();
     std::string bundleFile = bundleFileArg.getValue().c_str();
     std::string outputFolder = outputArg.getValue().c_str();
+    std::string imageListFile = imgListFileArg.getValue().c_str();
     std::string imgExtension = extArg.getValue().c_str();
     if(outputFolder.length() == 0)
         outputFolder = imageFolder+"/Line3D++/";
@@ -261,56 +265,90 @@ int main(int argc, char *argv[])
     }
     bundle_file.close();
 
+    // check image list (if it exists)
+    std::map<unsigned int,std::string> id2img;
+    if(imageListFile.length() > 0)
+    {
+        std::ifstream img_list_file;
+        img_list_file.open(imageListFile.c_str());
+
+        std::string img_list_line;
+        unsigned int id=0;
+        while(std::getline(img_list_file,img_list_line))
+        {
+            std::stringstream img_list_stream(img_list_line);
+            std::string fname,rest;
+            img_list_stream >> fname >> rest;
+
+            if(fname.length() > 0)
+            {
+                id2img[id] = fname;
+            }
+
+            ++id;
+        }
+    }
+
     // load images (parallel)
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP
     for(unsigned int i=0; i<num_cams; ++i)
-    {
-        // transform ID
-        std::stringstream id_str;
-        id_str << std::setfill('0') << std::setw(8) << i;
-        std::string fixedID = id_str.str();
-
+    {   
         // load image
         std::string img_filename = "";
         cv::Mat image;
         std::vector<boost::filesystem::wpath> possible_imgs;
-
-        if(imgExtension.length() == 0)
-        {
-            // look for common image extensions
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".jpg"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".JPG"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".png"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".PNG"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".jpeg"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".JPEG"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".bmp"));
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".BMP"));
-        }
-        else
-        {
-            // use given extension
-            possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+imgExtension));
-        }
-
         bool image_found = false;
-        unsigned int pos = 0;
-        while(!image_found && pos < possible_imgs.size())
+
+        // check images from list
+        if(id2img.find(i) != id2img.end())
         {
-            if(boost::filesystem::exists(possible_imgs[pos]))
+            image_found = true;
+            img_filename = imageFolder+"/"+id2img[i];
+        }
+
+        if(!image_found)
+        {
+            // transform ID
+            std::stringstream id_str;
+            id_str << std::setfill('0') << std::setw(8) << i;
+            std::string fixedID = id_str.str();
+
+            if(imgExtension.length() == 0)
             {
-                image_found = true;
-                img_filename = possible_imgs[pos].string();
+                // look for common image extensions
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".jpg"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".JPG"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".png"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".PNG"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".jpeg"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".JPEG"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".bmp"));
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+".BMP"));
             }
-            ++pos;
+            else
+            {
+                // use given extension
+                possible_imgs.push_back(boost::filesystem::wpath(imageFolder+"/"+fixedID+imgExtension));
+            }
+
+            unsigned int pos = 0;
+            while(!image_found && pos < possible_imgs.size())
+            {
+                if(boost::filesystem::exists(possible_imgs[pos]))
+                {
+                    image_found = true;
+                    img_filename = possible_imgs[pos].string();
+                }
+                ++pos;
+            }
         }
 
         if(image_found && cams_worldpointDepths[i].size() > 0)
         {
             // load image
-            image = cv::imread(img_filename);
+            image = cv::imread(img_filename,CV_LOAD_IMAGE_GRAYSCALE);
 
             // setup intrinsics
             float px = float(image.cols)/2.0f;
