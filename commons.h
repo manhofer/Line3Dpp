@@ -57,7 +57,7 @@ namespace L3DPP
 
     // scoring
     #define L3D_DEF_MIN_SIMILARITY_3D 0.50f
-    #define L3D_DEF_MIN_BEST_SCORE_3D 1.0f
+    #define L3D_DEF_MIN_BEST_SCORE_3D 0.75f
     #define L3D_DEF_MIN_BEST_SCORE_PERC 0.10f
 
     // replicator dynamics diffusion
