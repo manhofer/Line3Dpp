@@ -198,6 +198,7 @@ if (NOT "${TCLAP_INCLUDE_DIR}" STREQUAL "")
 endif (NOT "${TCLAP_INCLUDE_DIR}" STREQUAL "")
 
 add_definitions(-frounding-math)
+add_definitions("-D_FORCE_INLINES") # needed for ubuntu 16.xx
 
 ##-----------------------------------------------------------------------------
 ## specify all extra inlcude dirs
