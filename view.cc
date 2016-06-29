@@ -7,11 +7,13 @@ namespace L3DPP
                const Eigen::Matrix3d K, const Eigen::Matrix3d R,
                const Eigen::Vector3d t,
                const unsigned int width, const unsigned int height,
-               const float median_depth)
+               const float median_depth,
+               L3DPP::DataArray<float>* superpixels)
     {
         // init
         id_ = id;
         lines_ = lines;
+        superpixels_ = superpixels;
         width_ = width;
         height_ = height;
         diagonal_ = sqrtf(float(width_*width_+height_*height_));
@@ -30,10 +32,6 @@ namespace L3DPP
         Rt_ = R_.transpose();
         RtKinv_  = Rt_*Kinv_;
         C_ = Rt_ * (-1.0 * t_);
-
-        plane_n_ = getNormalizedRay(pp_);
-        width_1_3_ = float(width_) * 0.333f;
-        height_1_3_ = float(height_) * 0.333f;
 
         k_ = 0.0f;
         initial_median_depth_ = fmax(fabs(median_depth),L3D_EPS);
@@ -55,6 +53,9 @@ namespace L3DPP
     {
         if(lines_ != NULL)
             delete lines_;
+
+        if(superpixels_ != NULL)
+            delete superpixels_;
 
 #ifdef L3DPP_CUDA
         if(RtKinv_DA_ != NULL)
@@ -306,11 +307,17 @@ namespace L3DPP
     //------------------------------------------------------------------------------
     void View::computeSpatialRegularizer(const float r)
     {
+        k_ = getSpecificSpatialReg(r);
+    }
+
+    //------------------------------------------------------------------------------
+    float View::getSpecificSpatialReg(const float r)
+    {
         Eigen::Vector3d pp_shifted = pp_+Eigen::Vector3d(r,0.0,0.0);
         Eigen::Vector3d ray_pp = getNormalizedRay(pp_);
         Eigen::Vector3d ray_pp_shifted = getNormalizedRay(pp_shifted);
         double alpha = acos(fmin(fmax(double(ray_pp.dot(ray_pp_shifted)),-1.0),1.0));
-        k_ = sin(alpha);
+        return sin(alpha);
     }
 
     //------------------------------------------------------------------------------

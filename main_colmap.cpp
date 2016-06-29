@@ -95,9 +95,6 @@ int main(int argc, char *argv[])
     TCLAP::ValueArg<bool> ceresArg("c", "use_ceres", "use CERES (for 3D line optimization)", false, L3D_DEF_USE_CERES, "bool");
     cmd.add(ceresArg);
 
-    TCLAP::ValueArg<float> minBaselineArg("x", "min_image_baseline", "minimum baseline between matching images (world space)", false, L3D_DEF_MIN_BASELINE, "float");
-    cmd.add(minBaselineArg);
-
     TCLAP::ValueArg<float> constRegDepthArg("z", "const_reg_depth", "use a constant regularization depth (only when sigma_p is metric!)", false, -1.0f, "float");
     cmd.add(constRegDepthArg);
 
@@ -131,7 +128,6 @@ int main(int argc, char *argv[])
     float epipolarOverlap = fmin(fabs(epipolarArg.getValue()),0.99f);
     float sigmaA = fabs(sigma_A_Arg.getValue());
     float sigmaP = sigma_P_Arg.getValue();
-    float minBaseline = fabs(minBaselineArg.getValue());
     int kNN = knnArg.getValue();
     unsigned int maxNumSegments = segNumArg.getValue();
     unsigned int visibility_t = visibilityArg.getValue();
@@ -428,7 +424,7 @@ int main(int argc, char *argv[])
 
     // match images
     Line3D->matchImages(sigmaP,sigmaA,neighbors,epipolarOverlap,
-                        minBaseline,kNN,constRegDepth);
+                        kNN,constRegDepth);
 
     // compute result
     Line3D->reconstruct3Dlines(visibility_t,diffusion,collinearity,useCERES);
@@ -443,6 +439,8 @@ int main(int argc, char *argv[])
     Line3D->saveResultAsOBJ(outputFolder);
     // save as TXT
     Line3D->save3DLinesAsTXT(outputFolder);
+    // save as BIN
+    Line3D->save3DLinesAsBIN(outputFolder);
 
     // cleanup
     delete Line3D;

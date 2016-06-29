@@ -22,6 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // check libs
 #include "configLIBS.h"
 
+// internal
+#include "serialization.h"
+
 // external
 #include <queue>
 #include <stdlib.h>
@@ -49,7 +52,6 @@ namespace L3DPP
     // matching
     #define L3D_DEF_MATCHING_NEIGHBORS 10
     #define L3D_DEF_EPIPOLAR_OVERLAP 0.25f
-    #define L3D_DEF_MIN_BASELINE 0.1f
     #define L3D_DEF_KNN 10
     #define L3D_DEF_SCORING_POS_REGULARIZER 2.5f
     #define L3D_DEF_SCORING_ANG_REGULARIZER 10.0f
@@ -67,6 +69,17 @@ namespace L3DPP
     // clustering
     #define L3D_DEF_MIN_AFFINITY 0.50f
     #define L3D_DEF_MIN_VISIBILITY_T 3
+
+    // Plane3D: superpixels
+    #define P3D_DEF_MAX_IMG_WIDTH 720
+    #define P3D_DEF_MIN_IMG_WIDTH 640
+    #define P3D_DEF_NUM_SUPERPIXELS 500
+    #define P3D_DEF_SUPERPIXEL_W 40
+
+    // Plane3D: hypothesis selection/generation
+    #define P3D_DEF_HYP_NEIGHBORS 10
+    #define P3D_DEF_ANG_REGULARIZER 10.0f
+    #define P3D_DEF_POS_REGULARIZER 2.5f
 
     // optimization
 #ifdef L3DPP_CERES
@@ -108,6 +121,15 @@ namespace L3DPP
     private:
         unsigned int camID_;
         unsigned int segID_;
+
+        // serialization
+        friend class boost::serialization::access;
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version)
+        {
+            ar & boost::serialization::make_nvp("camID_", camID_);
+            ar & boost::serialization::make_nvp("segID_", segID_);
+        }
     };
 
     //------------------------------------------------------------------------------

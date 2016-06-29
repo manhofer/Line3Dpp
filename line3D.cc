@@ -23,7 +23,6 @@ namespace L3DPP
         // default
         collinearity_t_ = L3D_DEF_COLLINEARITY_T;
         num_neighbors_ = L3D_DEF_MATCHING_NEIGHBORS;
-        min_baseline_ = L3D_DEF_MIN_BASELINE;
         epipolar_overlap_ = L3D_DEF_EPIPOLAR_OVERLAP;
         kNN_ = L3D_DEF_KNN;
         sigma_p_ = L3D_DEF_SCORING_POS_REGULARIZER;
@@ -196,15 +195,16 @@ namespace L3DPP
             return;
         }
 
+        // create view
+        L3DPP::View* v = new L3DPP::View(camID,lines,K,R,t,image.cols,image.rows,median_depth);
+        view_mutex_.lock();
+
         display_text_mutex_.lock();
         std::cout << prefix_ << "adding view [" << std::setfill('0') << std::setw(L3D_DISP_CAMS) << camID;
         std::cout << "]: #lines = " << std::setfill(' ') << std::setw(L3D_DISP_LINES) << lines->width();
         std::cout << " [" << std::setfill('0') << std::setw(L3D_DISP_CAMS) << views_.size() << "]" << std::endl;
         display_text_mutex_.unlock();
 
-        // create view
-        L3DPP::View* v = new L3DPP::View(camID,lines,K,R,t,image.cols,image.rows,median_depth);
-        view_mutex_.lock();
         views_[camID] = v;
         view_order_.push_back(camID);
         matches_[camID] = std::vector<std::list<L3DPP::Match> >(lines->width());
@@ -375,8 +375,7 @@ namespace L3DPP
     //------------------------------------------------------------------------------
     void Line3D::matchImages(const float sigma_position, const float sigma_angle,
                              const unsigned int num_neighbors, const float epipolar_overlap,
-                             const float min_baseline, const int kNN,
-                             const float const_regularization_depth)
+                             const int kNN, const float const_regularization_depth)
     {
         // no new views can be added in the meantime!
         view_reserve_mutex_.lock();
@@ -397,7 +396,6 @@ namespace L3DPP
         sigma_p_ = sigma_position;
         sigma_a_ = fmin(fabs(sigma_angle),90.0f);
         two_sigA_sqr_ = 2.0f*sigma_a_*sigma_a_;
-        min_baseline_ = fmax(min_baseline,0.0f);
         epipolar_overlap_ = fmin(fabs(epipolar_overlap),0.99f);
         kNN_ = kNN;
         const_regularization_depth_ = const_regularization_depth;
@@ -671,6 +669,8 @@ namespace L3DPP
             }
 
             // highscore neighbors -> store in visual neighbor map
+            float min_baseline = v->getSpecificSpatialReg(0.5f)*v->median_depth();
+            min_baseline = 0.1f;
             std::list<L3DPP::VisualNeighbor>::iterator nit = neighbors.begin();
             while(nit!=neighbors.end() && used_neighbors.size() < num_neighbors_)
             {
@@ -678,13 +678,13 @@ namespace L3DPP
                 L3DPP::View* v2 = views_[vn.camID_];
 
                 // check baseline
-                if(used_neighbors.find(vn.camID_) == used_neighbors.end() && v->baseLine(v2) > min_baseline_)
+                if(used_neighbors.find(vn.camID_) == used_neighbors.end() && v->baseLine(v2) > min_baseline)
                 {
                     std::map<unsigned int,bool>::iterator u_it = used_neighbors.begin();
                     bool valid = true;
                     for(; u_it!=used_neighbors.end() && valid; ++u_it)
                     {
-                        if(!(v->baseLine(views_[u_it->first]) > min_baseline_))
+                        if(!(v->baseLine(views_[u_it->first]) > min_baseline))
                             valid = false;
                     }
 
@@ -849,7 +849,9 @@ namespace L3DPP
 
         num_matches_[src] = num_matches;
 
-        float perc = float(num_matches)/float(num_matches_before)*100.0f;
+        float perc = 0;
+        if(num_matches_before > 0)
+            perc = float(num_matches)/float(num_matches_before)*100.0f;
 
         std::cout << prefix_ << "filter matches by orientation... ";
         std::cout << num_matches_before << " --> " << num_matches;
@@ -2708,6 +2710,30 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
+    void Line3D::save3DLinesAsBIN(const std::string output_folder)
+    {
+        view_mutex_.lock();
+        view_reserve_mutex_.lock();
+
+        if(lines3D_.size() == 0)
+        {
+            std::cout << prefix_wng_ << "no 3D lines to save!" << std::endl;
+            view_reserve_mutex_.unlock();
+            view_mutex_.unlock();
+            return;
+        }
+
+        // get filename
+        std::string filename = output_folder+"/"+createOutputFilename()+".bin";
+
+        // serialize
+        L3DPP::serializeToFile(filename,lines3D_);
+
+        view_reserve_mutex_.unlock();
+        view_mutex_.unlock();
+    }
+
+    //------------------------------------------------------------------------------
     Eigen::Matrix3d Line3D::rotationFromRPY(const double roll, const double pitch,
                                             const double yaw)
     {
@@ -2803,6 +2829,77 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
+    void Line3D::decomposeProjectionMatrix(const Eigen::MatrixXd P_in,
+                                           Eigen::Matrix3d& K_out,
+                                           Eigen::Matrix3d& R_out,
+                                           Eigen::Vector3d& t_out)
+    {
+        if(P_in.rows() != 3 && P_in.cols() != 4)
+        {
+            std::cout << "P is not a 3x4 matrix! (" << P_in.rows() << "x" << P_in.cols() << ")" << std::endl;
+            return;
+        }
+
+        K_out = P_in.block<3,3>(0,0);
+
+        // get affine matrix (rq-decomposition of M)
+        // See Hartley & Zissermann, p552 (1st ed.)
+        double h = std::sqrt((K_out(2,1))*(K_out(2,1)) + (K_out(2,2))*(K_out(2,2)));
+        double s =  K_out(2,1) / h;
+        double c = -K_out(2,2) / h;
+
+        Eigen::Matrix3d Rx;
+        Rx.setZero();
+        Rx(0,0) =  1;
+        Rx(1,1) =  c; Rx(2,2) = c;
+        Rx(1,2) = -s; Rx(2,1) = s;
+
+        K_out = K_out * Rx;
+
+        h = sqrt((K_out(2,0))*(K_out(2,0)) + (K_out(2,2))*(K_out(2,2)));
+        s =  K_out(2,0) / h;
+        c = -K_out(2,2) / h;
+
+        Eigen::Matrix3d Ry;
+        Ry.setZero();
+        Ry(1,1) =  1;
+        Ry(0,0) =  c; Ry(2,2) = c;
+        Ry(0,2) = -s; Ry(2,0) = s;
+
+        K_out = K_out * Ry;
+
+        h = sqrt((K_out(1,0)*K_out(1,0)) + (K_out(1,1)*K_out(1,1)));
+        s =  K_out(1,0) / h;
+        c = -K_out(1,1) / h;
+
+        Eigen::Matrix3d Rz;
+        Rz.setZero();
+        Rz(2,2) =  1;
+        Rz(0,0) =  c; Rz(1,1) = c;
+        Rz(0,1) = -s; Rz(1,0) = s;
+
+        K_out = K_out * Rz;
+
+        Eigen::Matrix3d Sign = Eigen::Matrix3d::Identity(3,3);
+
+        if (K_out(0,0) < 0) Sign(0,0) = -1;
+        if (K_out(1,1) < 0) Sign(1,1) = -1;
+        if (K_out(2,2) < 0) Sign(2,2) = -1;
+
+        K_out = K_out * Sign; // change signum of columns
+
+        R_out = Rx * Ry * Rz * Sign;
+        R_out.transposeInPlace();
+
+        Eigen::Vector3d P4;
+        P4 = P_in.block<3,1>(0,3);
+
+        t_out = K_out.inverse() * P4;
+
+        K_out *= 1.0 / K_out(2,2); // normalize, such that lower-right element is 1
+    }
+
+    //------------------------------------------------------------------------------
     std::string Line3D::createOutputFilename()
     {
         std::stringstream str;
@@ -2819,8 +2916,6 @@ namespace L3DPP
         str << "sigmaA_" << sigma_a_ << "__";
 
         str << "epiOverlap_" << epipolar_overlap_ << "__";
-
-        str << "minBaseline_" << min_baseline_ << "__";
 
         if(kNN_ > 0)
             str << "kNN_" << kNN_ << "__";

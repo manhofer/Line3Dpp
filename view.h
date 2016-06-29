@@ -61,11 +61,13 @@ namespace L3DPP
              const Eigen::Matrix3d K, const Eigen::Matrix3d R,
              const Eigen::Vector3d t,
              const unsigned int width, const unsigned int height,
-             const float median_depth);
+             const float median_depth,
+             L3DPP::DataArray<float>* superpixels=NULL);
         ~View();
 
-        // compute spatial regularizer
+        // compute spatial regularizer (from pixel value)
         void computeSpatialRegularizer(const float r);
+        float getSpecificSpatialReg(const float r);
 
         // find collinear segments
         void findCollinearSegments(const float dist_t, bool useGPU);
@@ -155,6 +157,7 @@ namespace L3DPP
         unsigned int height(){return height_;}
         float diagonal(){return diagonal_;}
         L3DPP::DataArray<float4>* lines(){return lines_;}
+        L3DPP::DataArray<float>* superpixels(){return superpixels_;}
         size_t num_lines(){return lines_->width();}
         float k(){return k_;}
         float median_depth(){return median_depth_;}
@@ -189,6 +192,9 @@ namespace L3DPP
         // lines
         L3DPP::DataArray<float4>* lines_;
 
+        // superpixels (Plane3D)
+        L3DPP::DataArray<float>* superpixels_;
+
         // camera
         unsigned int id_;
         Eigen::Matrix3d K_;
@@ -203,11 +209,6 @@ namespace L3DPP
         unsigned int height_;
         float diagonal_;
         float min_line_length_;
-
-        // camera plane
-        Eigen::Vector3d plane_n_;
-        float width_1_3_;
-        float height_1_3_;
 
         // regularizer
         float k_;

@@ -105,8 +105,6 @@ namespace L3DPP
         // t                - camera translation (3x1) [camera model: point2D = K [R | t] point3D]
         // median_depth     - median 3D worldpoint depth for this camera (i.e. median
         //                    Euclidean distance of the worldpoints to the camera center)
-        //                    Note: this is only needed when sigma_position is in world-coordinates (i.e. metric)!
-        //                          when sigma_position is in pixels this value is irrelevant!
         // wps_or_neighbors - a list with the IDs of the
         //                    (a) worldpoints seen by this camera                --> if neighbors_by_worldpoints=true (see constructor)
         //                    (b) images with which this image should be matched --> if neighbors_by_worldpoints=false
@@ -127,10 +125,10 @@ namespace L3DPP
         // radial_coeffs     - up to three radial distortion coefficients (set unused to zero!)
         // tangential_coeffs - up tp two tangential distortion coefficients (set unused to zero!)
         // K                 - camera intrinsics (3x3)
-        void undistortImage(const cv::Mat& inImg, cv::Mat& outImg,
-                            const Eigen::Vector3d radial_coeffs,
-                            const Eigen::Vector2d tangential_coeffs,
-                            const Eigen::Matrix3d& K);
+        static void undistortImage(const cv::Mat& inImg, cv::Mat& outImg,
+                                   const Eigen::Vector3d radial_coeffs,
+                                   const Eigen::Vector2d tangential_coeffs,
+                                   const Eigen::Matrix3d& K);
 
         // void matchImages(...): matches 2D line segments between images
         // -------------------------------------
@@ -145,7 +143,6 @@ namespace L3DPP
         // num_neighbors              - number of neighboring images with which each image is matched
         // epipolar_overlap           - minimum overlap of a line segment with the epipolar beam of another segment,
         //                              to be considered a potential match (in [0,1])
-        // min_baseline               - minimum baseline between two images for matching (in world-coordinates!)
         // kNN                        - k-nearest-neighbor matching
         //                              if > 0  -> keep only the k matches with the highest epipolar overlap (per image)
         //                              if <= 0 -> keep all matches that fulfill the epipolar_overlap
@@ -156,7 +153,6 @@ namespace L3DPP
                          const float sigma_angle=L3D_DEF_SCORING_ANG_REGULARIZER,
                          const unsigned int num_neighbors=L3D_DEF_MATCHING_NEIGHBORS,
                          const float epipolar_overlap=L3D_DEF_EPIPOLAR_OVERLAP,
-                         const float min_baseline=L3D_DEF_MIN_BASELINE,
                          const int kNN=L3D_DEF_KNN,
                          const float const_regularization_depth=-1.0f);
 
@@ -195,6 +191,7 @@ namespace L3DPP
         void saveResultAsSTL(const std::string output_folder);
         void saveResultAsOBJ(const std::string output_folder);
         void save3DLinesAsTXT(const std::string output_folder);
+        void save3DLinesAsBIN(const std::string output_folder);
 
         // Eigen::Vector4f getSegmentCoords2D(...): provides access to the 2D segment coordinates
         // -------------------------------------
@@ -228,15 +225,21 @@ namespace L3DPP
         // --------------------------------------------------
 
         // rotation matrix from roll, pitch and yaw (rodriguez)
-        Eigen::Matrix3d rotationFromRPY(const double roll, const double pitch,
-                                        const double yaw);
+        static Eigen::Matrix3d rotationFromRPY(const double roll, const double pitch,
+                                               const double yaw);
 
         // rotation matrix from a quaternion
-        Eigen::Matrix3d rotationFromQ(const double Qw, const double Qx,
-                                      const double Qy, const double Qz);
+        static Eigen::Matrix3d rotationFromQ(const double Qw, const double Qx,
+                                             const double Qy, const double Qz);
 
         // create an output filename based on the current parameter settings
         std::string createOutputFilename();
+
+        // decompose P matrix to K, R and t
+        static void decomposeProjectionMatrix(const Eigen::MatrixXd P_in,
+                                              Eigen::Matrix3d& K_out,
+                                              Eigen::Matrix3d& R_out,
+                                              Eigen::Vector3d& t_out);
 
     private:
         // process worldpoint list
@@ -391,7 +394,6 @@ namespace L3DPP
 
         // matches
         unsigned int num_neighbors_;
-        float min_baseline_;
         float epipolar_overlap_;
         int kNN_;
         boost::mutex match_mutex_;
