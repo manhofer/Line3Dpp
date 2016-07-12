@@ -282,14 +282,14 @@ namespace L3DPP
         }
 
         // basics
-        unsigned int width(){return width_;}
-        unsigned int real_width(){return real_width_;}
-        unsigned int height(){return height_;}
-        size_t pitchCPU(){return pitchCPU_;}
-        size_t strideCPU(){return strideCPU_;}
+        unsigned int width() const {return width_;}
+        unsigned int real_width() const {return real_width_;}
+        unsigned int height() const {return height_;}
+        size_t pitchCPU() const {return pitchCPU_;}
+        size_t strideCPU() const {return strideCPU_;}
 
 #ifdef L3DPP_CUDA
-        size_t pitchGPU()
+        size_t pitchGPU() const
         {
             if(dataGPU_ == NULL)
             {
@@ -298,7 +298,7 @@ namespace L3DPP
 
             return pitchGPU_;
         }
-        size_t strideGPU()
+        size_t strideGPU() const
         {
             if(dataGPU_ == NULL)
             {
@@ -307,9 +307,9 @@ namespace L3DPP
 
             return strideGPU_;
         }
-        bool onGPU(){return (dataGPU_ != NULL);}
+        bool onGPU() const {return (dataGPU_ != NULL);}
 #endif //L3DPP_CUDA
-        size_t bytes(){return height_*pitchCPU_;}
+        size_t bytes() const {return height_*pitchCPU_;}
 
     private:
 

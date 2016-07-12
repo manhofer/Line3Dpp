@@ -52,8 +52,8 @@ namespace L3DPP
             valid_ = false;
         }
 
-        Segment3D(const Eigen::Vector3d P1,
-                  const Eigen::Vector3d P2)
+        Segment3D(const Eigen::Vector3d& P1,
+                  const Eigen::Vector3d& P2)
         {
             length_ = (P1-P2).norm();
             if(length_ > L3D_EPS)
@@ -74,14 +74,14 @@ namespace L3DPP
         }
 
         // distance point to line
-        float distance_Point2Line(const Eigen::Vector3d P) const
+        float distance_Point2Line(const Eigen::Vector3d& P) const
         {
             Eigen::Vector3d hlp_pt = P1_ + (dir_ * ((P - P1_).transpose()) * dir_);
             return (hlp_pt-P).norm();
         }
 
         // translate points
-        void translate(const Eigen::Vector3d t)
+        void translate(const Eigen::Vector3d& t)
         {
             P1_ += t;
             P2_ += t;
@@ -129,25 +129,25 @@ namespace L3DPP
     {
     public:
         LineCluster3D(){}
-        LineCluster3D(L3DPP::Segment3D seg3D,
-                      std::list<L3DPP::Segment2D> residuals,
+        LineCluster3D(const L3DPP::Segment3D& seg3D,
+                      const std::list<L3DPP::Segment2D>& residuals,
                       const unsigned int ref_view) :
             seg3D_(seg3D), residuals_(residuals),
             reference_view_(ref_view){}
 
         // data access
         L3DPP::Segment3D seg3D() const {return seg3D_;}
-        std::list<L3DPP::Segment2D>* residuals(){return &residuals_;}
-        size_t size(){return residuals_.size();}
-        unsigned int reference_view(){return reference_view_;}
+        const std::list<L3DPP::Segment2D>* residuals() const {return &residuals_;}
+        size_t size() const {return residuals_.size();}
+        unsigned int reference_view() const {return reference_view_;}
 
         // update 3D line (after bundling)
-        void update3Dline(L3DPP::Segment3D seg3D){
+        void update3Dline(const L3DPP::Segment3D& seg3D){
             seg3D_ = seg3D;
         }
 
         // translate
-        void translate(const Eigen::Vector3d t)
+        void translate(const Eigen::Vector3d& t)
         {
             seg3D_.translate(t);
         }

@@ -60,69 +60,26 @@ namespace L3DPP
         float w_;
     } CLEdge;
 
-    // point on clustered 2D line
-    typedef struct {
-        unsigned int lineID_;
-        float x_;
-        float y_;
-        float pos_;
-    } CLPointOnLine;
-
     // sorting function for edges
-    static bool sortEdges(const CLEdge& a, const CLEdge& b)
+    static bool sortCLEdgesByWeight(const CLEdge& a, const CLEdge& b)
     {
         return a.w_ < b.w_;
     }
 
-    static bool sortEdgesByRow(const CLEdge& a, const CLEdge& b)
-    {
-        if(a.i_ < b.i_)
-            return true;
-        else if(a.i_ == b.i_ && a.j_ < b.j_)
-            return true;
-        else
-            return false;
-    }
-
-    static bool sortEdgesByCol(const CLEdge& a, const CLEdge& b)
-    {
-        if(a.j_ < b.j_)
-            return true;
-        else if(a.j_ == b.j_ && a.i_ < b.i_)
-            return true;
-        else
-            return false;
-    }
-
     // sort entries for sparse affinity matrix (CLEdges)
-    static bool sortCLEdgesByCol(const CLEdge a1, const CLEdge a2)
+    static bool sortCLEdgesByCol(const CLEdge& a1, const CLEdge& a2)
     {
-        if(a1.j_ < a2.j_)
-            return true;
-        else if(a1.j_ == a2.j_ && a1.i_ < a2.i_)
-            return true;
-        else
-            return false;
+        return ((a1.j_ < a2.j_) || (a1.j_ == a2.j_ && a1.i_ < a2.i_));
     }
 
-    static bool sortCLEdgesByRow(const CLEdge a1, const CLEdge a2)
+    static bool sortCLEdgesByRow(const CLEdge& a1, const CLEdge& a2)
     {
-        if(a1.i_ < a2.i_)
-            return true;
-        else if(a1.i_ == a2.i_ && a1.j_ < a2.j_)
-            return true;
-        else
-            return false;
-    }
-
-    // sorting function for projected points on a line
-    static bool sortPointsOnLine(const CLPointOnLine& a, const CLPointOnLine& b)
-    {
-        return a.pos_ < b.pos_;
+        return ((a1.i_ < a2.i_) || (a1.i_ == a2.i_ && a1.j_ < a2.j_));
     }
 
     // perform graph clustering
-    CLUniverse* performClustering(std::list<CLEdge> edges, int numNodes,
+    // NOTE: edges are sorted during the process!
+    CLUniverse* performClustering(std::list<CLEdge>& edges, int numNodes,
                                   float c);
 
 }

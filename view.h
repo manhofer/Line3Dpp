@@ -58,8 +58,8 @@ namespace L3DPP
     {
     public:
         View(const unsigned int id, L3DPP::DataArray<float4>* lines,
-             const Eigen::Matrix3d K, const Eigen::Matrix3d R,
-             const Eigen::Vector3d t,
+             const Eigen::Matrix3d& K, const Eigen::Matrix3d& R,
+             const Eigen::Vector3d& t,
              const unsigned int width, const unsigned int height,
              const float median_depth,
              L3DPP::DataArray<float>* superpixels=NULL);
@@ -75,15 +75,15 @@ namespace L3DPP
         // draws lines into image
         void drawLineImage(cv::Mat& img);
         void drawSingleLine(const unsigned int id, cv::Mat& img,
-                            const cv::Scalar color);
-        void drawEpipolarLine(const Eigen::Vector3d epi, cv::Mat& img);
+                            const cv::Scalar& color);
+        void drawEpipolarLine(const Eigen::Vector3d& epi, cv::Mat& img);
 
         // access to collinear segments
         std::list<unsigned int> collinearSegments(const unsigned int segID);
 
         // get ray from 2D point (normalized)
-        Eigen::Vector3d getNormalizedRay(const Eigen::Vector3d p);
-        Eigen::Vector3d getNormalizedRay(const Eigen::Vector2d p);
+        Eigen::Vector3d getNormalizedRay(const Eigen::Vector3d& p);
+        Eigen::Vector3d getNormalizedRay(const Eigen::Vector2d& p);
         Eigen::Vector3d getNormalizedLinePointRay(const unsigned int lID,
                                                   const bool pt1);
 
@@ -92,15 +92,15 @@ namespace L3DPP
                                           const float depth2);
 
         // projects a 3D point into image
-        Eigen::Vector2d project(const Eigen::Vector3d P);
-        Eigen::Vector3d projectWithCheck(const Eigen::Vector3d P);
+        Eigen::Vector2d project(const Eigen::Vector3d& P);
+        Eigen::Vector3d projectWithCheck(const Eigen::Vector3d& P);
 
         // get optical axis
         Eigen::Vector3d getOpticalAxis();
 
         // angle between views or view and segment (in rad)
         double opticalAxesAngle(L3DPP::View* v);
-        double segmentQualityAngle(const L3DPP::Segment3D seg3D,
+        double segmentQualityAngle(const L3DPP::Segment3D& seg3D,
                                    const unsigned int segID);
 
         // computes a projective visual neighbor score (to ensure bigger baselines)
@@ -110,7 +110,7 @@ namespace L3DPP
         float baseLine(L3DPP::View* v);
 
         // checks if a projected 3D segment is long enough
-        bool projectedLongEnough(const L3DPP::Segment3D seg3D);
+        bool projectedLongEnough(const L3DPP::Segment3D& seg3D);
 
         // set new regularization depth
         void update_median_depth(const float d,
@@ -135,33 +135,33 @@ namespace L3DPP
         }
 
         // compute regularizer with respect to given 3D point
-        float regularizerFrom3Dpoint(const Eigen::Vector3d P);
+        float regularizerFrom3Dpoint(const Eigen::Vector3d& P);
 
         // get coordinates of a specific line segment
         Eigen::Vector4f getLineSegment2D(const unsigned int id);
 
         // translate view by a fixed vector
-        void translate(const Eigen::Vector3d t);
+        void translate(const Eigen::Vector3d& t);
 
         // data access
-        unsigned int id(){return id_;}
-        Eigen::Vector3d C(){return C_;}
-        Eigen::Matrix3d K(){return K_;}
-        Eigen::Matrix3d Kinv(){return Kinv_;}
-        Eigen::Matrix3d R(){return R_;}
-        Eigen::Matrix3d Rt(){return Rt_;}
-        Eigen::Matrix3d RtKinv(){return RtKinv_;}
-        Eigen::Vector3d t(){return t_;}
-        Eigen::Vector3d pp(){return pp_;}
-        unsigned int width(){return width_;}
-        unsigned int height(){return height_;}
-        float diagonal(){return diagonal_;}
+        unsigned int id() const {return id_;}
+        Eigen::Vector3d C() const {return C_;}
+        Eigen::Matrix3d K() const {return K_;}
+        Eigen::Matrix3d Kinv() const {return Kinv_;}
+        Eigen::Matrix3d R() const {return R_;}
+        Eigen::Matrix3d Rt() const {return Rt_;}
+        Eigen::Matrix3d RtKinv() const {return RtKinv_;}
+        Eigen::Vector3d t() const {return t_;}
+        Eigen::Vector3d pp() const {return pp_;}
+        unsigned int width() const {return width_;}
+        unsigned int height() const {return height_;}
+        float diagonal() const {return diagonal_;}
         L3DPP::DataArray<float4>* lines(){return lines_;}
         L3DPP::DataArray<float>* superpixels(){return superpixels_;}
-        size_t num_lines(){return lines_->width();}
-        float k(){return k_;}
-        float median_depth(){return median_depth_;}
-        float median_sigma(){return median_sigma_;}
+        size_t num_lines() const {return lines_->width();}
+        float k() const {return k_;}
+        float median_depth() const {return median_depth_;}
+        float median_sigma() const {return median_sigma_;}
 
         // lock/unlock view specific mutex
         void lock_mutex(){mutex_.lock();}
@@ -170,7 +170,7 @@ namespace L3DPP
 #ifdef L3DPP_CUDA
         // GPU data
         L3DPP::DataArray<float>* RtKinvGPU(){return RtKinv_DA_;}
-        float3 C_GPU(){return C_f3_;}
+        float3 C_GPU() const {return C_f3_;}
 #endif //L3DPP_CUDA
 
     private:
@@ -180,14 +180,14 @@ namespace L3DPP
 
         // checks if a point is on a segment (only approximately!)
         // Note: use only cor collinearity estimation!
-        bool pointOnSegment(const Eigen::Vector3d p1, const Eigen::Vector3d p2,
-                            const Eigen::Vector3d x);
+        bool pointOnSegment(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
+                            const Eigen::Vector3d& x);
 
         // collinearity helper function: point to line distance 2D
-        float distance_point2line_2D(const Eigen::Vector3d line, const Eigen::Vector3d p);
+        float distance_point2line_2D(const Eigen::Vector3d& line, const Eigen::Vector3d& p);
 
         // smaller angle between two lines [0,pi/2]
-        float smallerAngle(const Eigen::Vector2d v1, const Eigen::Vector2d v2);
+        float smallerAngle(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2);
 
         // lines
         L3DPP::DataArray<float4>* lines_;

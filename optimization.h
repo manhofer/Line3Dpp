@@ -182,7 +182,7 @@ namespace L3DPP
         LineOptimizer(std::map<unsigned int,L3DPP::View*> views,
                       std::vector<L3DPP::LineCluster3D>* clusters3D,
                       const unsigned int max_iter,
-                      const std::string prefix) :
+                      const std::string& prefix) :
             views_(views), clusters3D_(clusters3D),
             max_iter_(max_iter), prefix_(prefix){}
 

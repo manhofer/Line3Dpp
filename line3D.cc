@@ -3,8 +3,8 @@
 namespace L3DPP
 {
     //------------------------------------------------------------------------------
-    Line3D::Line3D(const std::string output_folder, const bool load_segments,
-                   int max_img_width,
+    Line3D::Line3D(const std::string& output_folder, const bool load_segments,
+                   const int max_img_width,
                    const unsigned int max_line_segments,
                    const bool neighbors_by_worldpoints,
                    const bool use_GPU)
@@ -82,8 +82,8 @@ namespace L3DPP
 
     //------------------------------------------------------------------------------
     void Line3D::undistortImage(const cv::Mat& inImg, cv::Mat& outImg,
-                                const Eigen::Vector3d radial_coeffs,
-                                const Eigen::Vector2d tangential_coeffs,
+                                const Eigen::Vector3d& radial_coeffs,
+                                const Eigen::Vector2d& tangential_coeffs,
                                 const Eigen::Matrix3d& K)
     {
         cv::Mat I = cv::Mat_<double>::eye(3,3);
@@ -111,10 +111,10 @@ namespace L3DPP
 
     //------------------------------------------------------------------------------
     void Line3D::addImage(const unsigned int camID, cv::Mat& image,
-                          const Eigen::Matrix3d K, const Eigen::Matrix3d R,
-                          const Eigen::Vector3d t, const float median_depth,
-                          std::list<unsigned int>& wps_or_neighbors,
-                          std::vector<cv::Vec4f> line_segments)
+                          const Eigen::Matrix3d& K, const Eigen::Matrix3d& R,
+                          const Eigen::Vector3d& t, const float median_depth,
+                          const std::list<unsigned int>& wps_or_neighbors,
+                          const std::vector<cv::Vec4f>& line_segments)
     {
         // check size
         if(std::max(image.cols,image.rows) < L3D_DEF_MIN_IMG_WIDTH)
@@ -140,7 +140,7 @@ namespace L3DPP
         else
         {
             // reserve
-            views_reserved_[camID] = true;
+            views_reserved_.insert(camID);
         }
 
         if(views_reserved_.size() == 1)
@@ -210,7 +210,7 @@ namespace L3DPP
         matches_[camID] = std::vector<std::list<L3DPP::Match> >(lines->width());
         num_matches_[camID] = 0;
         processed_[camID] = false;
-        visual_neighbors_[camID] = std::map<unsigned int,bool>();
+        visual_neighbors_[camID] = std::set<unsigned int>();
         num_lines_total_ += lines->width();
         views_avg_depths_.push_back(fmax(median_depth,L3D_EPS));
 
@@ -228,9 +228,9 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::processWPlist(const unsigned int camID, std::list<unsigned int>& wps)
+    void Line3D::processWPlist(const unsigned int camID, const std::list<unsigned int>& wps)
     {
-        std::list<unsigned int>::iterator it = wps.begin();
+        std::list<unsigned int>::const_iterator it = wps.begin();
         for(; it!=wps.end(); ++it)
         {
             unsigned int wpID = *it;
@@ -241,13 +241,13 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::setVisualNeighbors(const unsigned int camID, std::list<unsigned int>& neighbors)
+    void Line3D::setVisualNeighbors(const unsigned int camID, const std::list<unsigned int>& neighbors)
     {
         fixed_visual_neighbors_[camID] = neighbors;
     }
 
     //------------------------------------------------------------------------------
-    L3DPP::DataArray<float4>* Line3D::detectLineSegments(const unsigned int camID, cv::Mat& image)
+    L3DPP::DataArray<float4>* Line3D::detectLineSegments(const unsigned int camID, const cv::Mat& image)
     {
         // check image format
         cv::Mat imgGray;
@@ -474,7 +474,7 @@ namespace L3DPP
                     for(; n_it!=fixed_visual_neighbors_[camID].end(); ++n_it)
                     {
                         if(views_.find(*n_it) != views_.end())
-                            visual_neighbors_[camID][*n_it] = true;
+                            visual_neighbors_[camID].insert(*n_it);
                     }
                 }
             }
@@ -512,7 +512,7 @@ namespace L3DPP
 #endif //L3DPP_OPENMP
         for(size_t i=0; i<3; ++i)
         {
-            std::map<unsigned int,L3DPP::View*>::iterator it = views_.begin();
+            std::map<unsigned int,L3DPP::View*>::const_iterator it = views_.begin();
             for(; it!=views_.end(); ++it)
             {
                 double val = (it->second->C())(i);
@@ -584,13 +584,13 @@ namespace L3DPP
             visual_neighbors_[camID].clear();
             std::map<unsigned int,unsigned int> commonWPs;
 
-            std::list<unsigned int>::iterator wp_it = views2worldpoints_[camID].begin();
+            std::list<unsigned int>::const_iterator wp_it = views2worldpoints_[camID].begin();
             for(; wp_it!=views2worldpoints_[camID].end(); ++wp_it)
             {
                 // iterate over worldpoints
                 unsigned int wpID = *wp_it;
 
-                std::list<unsigned int>::iterator view_it = worldpoints2views_[wpID].begin();
+                std::list<unsigned int>::const_iterator view_it = worldpoints2views_[wpID].begin();
                 for(; view_it!=worldpoints2views_[wpID].end(); ++view_it)
                 {
                     // all views are potential neighbors
@@ -613,10 +613,10 @@ namespace L3DPP
                 return;
 
             // find visual neighbors
-            std::map<unsigned int,bool> used_neighbors;
+            std::set<unsigned int> used_neighbors;
             std::list<L3DPP::VisualNeighbor> neighbors;
             L3DPP::View* v = views_[camID];
-            std::map<unsigned int,unsigned int>::iterator c_it = commonWPs.begin();
+            std::map<unsigned int,unsigned int>::const_iterator c_it = commonWPs.begin();
             for(; c_it!=commonWPs.end(); ++c_it)
             {
                 unsigned int vID = c_it->first;
@@ -649,7 +649,7 @@ namespace L3DPP
                 unsigned int num_bigger_t = 0;
 
                 // count the number of highly similar views
-                std::list<L3DPP::VisualNeighbor>::iterator nit = neighbors.begin();
+                std::list<L3DPP::VisualNeighbor>::const_iterator nit = neighbors.begin();
                 while(nit!=neighbors.end() && (*nit).score_ > score_t)
                 {
                     ++num_bigger_t;
@@ -671,7 +671,7 @@ namespace L3DPP
             // highscore neighbors -> store in visual neighbor map
             float min_baseline = v->getSpecificSpatialReg(0.5f)*v->median_depth();
             min_baseline = 0.1f;
-            std::list<L3DPP::VisualNeighbor>::iterator nit = neighbors.begin();
+            std::list<L3DPP::VisualNeighbor>::const_iterator nit = neighbors.begin();
             while(nit!=neighbors.end() && used_neighbors.size() < num_neighbors_)
             {
                 L3DPP::VisualNeighbor vn = *nit;
@@ -680,16 +680,16 @@ namespace L3DPP
                 // check baseline
                 if(used_neighbors.find(vn.camID_) == used_neighbors.end() && v->baseLine(v2) > min_baseline)
                 {
-                    std::map<unsigned int,bool>::iterator u_it = used_neighbors.begin();
+                    std::set<unsigned int>::const_iterator u_it = used_neighbors.begin();
                     bool valid = true;
                     for(; u_it!=used_neighbors.end() && valid; ++u_it)
                     {
-                        if(!(v->baseLine(views_[u_it->first]) > min_baseline))
+                        if(!(v->baseLine(views_[*u_it]) > min_baseline))
                             valid = false;
                     }
 
                     if(valid)
-                        used_neighbors[vn.camID_] = true;
+                        used_neighbors.insert(vn.camID_);
                 }
 
                 ++nit;
@@ -702,7 +702,7 @@ namespace L3DPP
     //------------------------------------------------------------------------------
     void Line3D::computeMatches()
     {
-        std::map<unsigned int,std::map<unsigned int,bool> >::iterator it = visual_neighbors_.begin();
+        std::map<unsigned int,std::set<unsigned int> >::const_iterator it = visual_neighbors_.begin();
         for(; it!=visual_neighbors_.end(); ++it)
         {
             std::cout << prefix_;
@@ -717,27 +717,27 @@ namespace L3DPP
             if(useGPU_)
                 initSrcDataGPU(it->first);
 
-            std::map<unsigned int,bool>::iterator n_it = it->second.begin();
+            std::set<unsigned int>::const_iterator n_it = it->second.begin();
             for(; n_it!=it->second.end(); ++n_it)
             {
-                if(matched_[it->first].find(n_it->first) == matched_[it->first].end())
+                if(matched_[it->first].find(*n_it) == matched_[it->first].end())
                 {
                     // not yet matched
-                    std::cout << "[" << std::setfill('0') << std::setw(L3D_DISP_CAMS) << n_it->first << "] ";
+                    std::cout << "[" << std::setfill('0') << std::setw(L3D_DISP_CAMS) << *n_it << "] ";
 
                     // compute fundamental matrix
                     Eigen::Matrix3d F = getFundamentalMatrix(views_[it->first],
-                                                             views_[n_it->first]);
+                                                             views_[*n_it]);
 
                     // matching
                     if(useGPU_)
-                        matchingGPU(it->first,n_it->first,F);
+                        matchingGPU(it->first,*n_it,F);
                     else
-                        matchingCPU(it->first,n_it->first,F);
+                        matchingCPU(it->first,*n_it,F);
 
                     // set matched
-                    matched_[it->first][n_it->first] = true;
-                    matched_[n_it->first][it->first] = true;
+                    matched_[it->first].insert(*n_it);
+                    matched_[*n_it].insert(it->first);
                 }
             }
 
@@ -823,7 +823,7 @@ namespace L3DPP
         {
             std::list<L3DPP::Match> remaining;
 
-            std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
+            std::list<L3DPP::Match>::const_iterator it = matches_[src][i].begin();
             for(; it!=matches_[src][i].end(); ++it)
             {
                 L3DPP::Match m = *it;
@@ -899,7 +899,7 @@ namespace L3DPP
 
     //------------------------------------------------------------------------------
     void Line3D::matchingCPU(const unsigned int src, const unsigned int tgt,
-                             Eigen::Matrix3d& F)
+                             const Eigen::Matrix3d& F)
     {
         L3DPP::View* v_src = views_[src];
         L3DPP::View* v_tgt = views_[tgt];
@@ -925,25 +925,6 @@ namespace L3DPP
             // epipolar lines
             Eigen::Vector3d epi_p1 = F*p1;
             Eigen::Vector3d epi_p2 = F*p2;
-
-            /* DEBUG only...
-            if(src > 2)
-            {
-                cv::namedWindow("src",CV_WINDOW_NORMAL);
-                cv::namedWindow("tgt",CV_WINDOW_NORMAL);
-                cv::Mat Isrc,Itgt;
-                v_src->drawLineImage(Isrc);
-                v_tgt->drawLineImage(Itgt);
-
-                v_src->drawSingleLine(r,Isrc,cv::Scalar(0,0,255));
-                v_tgt->drawEpipolarLine(epi_p1,Itgt);
-                v_tgt->drawEpipolarLine(epi_p2,Itgt);
-
-                cv::imshow("src",Isrc);
-                cv::imshow("tgt",Itgt);
-                cv::waitKey();
-            }
-            */
 
             // use priority queue when kNN > 0
             L3DPP::pairwise_matches scored_matches;
@@ -1058,7 +1039,7 @@ namespace L3DPP
 
     //------------------------------------------------------------------------------
     void Line3D::matchingGPU(const unsigned int src, const unsigned int tgt,
-                             Eigen::Matrix3d& F)
+                             const Eigen::Matrix3d& F)
     {
 #ifdef L3DPP_CUDA
         // INFO: src data must be on GPU! initSrcDataGPU(src)
@@ -1094,8 +1075,8 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    bool Line3D::pointOnSegment(const Eigen::Vector3d x, const Eigen::Vector3d p1,
-                                const Eigen::Vector3d p2)
+    bool Line3D::pointOnSegment(const Eigen::Vector3d& x, const Eigen::Vector3d& p1,
+                                const Eigen::Vector3d& p2)
     {
         Eigen::Vector2d v1(p1.x()-x.x(),p1.y()-x.y());
         Eigen::Vector2d v2(p2.x()-x.x(),p2.y()-x.y());
@@ -1103,7 +1084,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float Line3D::mutualOverlap(std::vector<Eigen::Vector3d>& collinear_points)
+    float Line3D::mutualOverlap(const std::vector<Eigen::Vector3d>& collinear_points)
     {
         float overlap = 0.0f;
 
@@ -1185,9 +1166,9 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    Eigen::Vector2d Line3D::triangulationDepths(const unsigned int src_camID, const Eigen::Vector3d p1,
-                                                const Eigen::Vector3d p2, const unsigned int tgt_camID,
-                                                const Eigen::Vector3d line_q1, const Eigen::Vector3d line_q2)
+    Eigen::Vector2d Line3D::triangulationDepths(const unsigned int src_camID, const Eigen::Vector3d& p1,
+                                                const Eigen::Vector3d& p2, const unsigned int tgt_camID,
+                                                const Eigen::Vector3d& line_q1, const Eigen::Vector3d& line_q2)
     {
         L3DPP::View* v_src = views_[src_camID];
         L3DPP::View* v_tgt = views_[tgt_camID];
@@ -1267,7 +1248,7 @@ namespace L3DPP
                 reg1 = 0.5f*(reg1 + 2.0f*sig1_tgt*sig1_tgt);
                 reg2 = 0.5f*(reg2 + 2.0f*sig2_tgt*sig2_tgt);
 
-                std::list<L3DPP::Match>::iterator it2 = matches_[src][i].begin();
+                std::list<L3DPP::Match>::const_iterator it2 = matches_[src][i].begin();
                 for(; it2!=matches_[src][i].end(); ++it2)
                 {
                     L3DPP::Match M2 = *it2;
@@ -1361,7 +1342,7 @@ namespace L3DPP
             if(offset >= 0)
             {
                 int id = 0;
-                std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
+                std::list<L3DPP::Match>::const_iterator it = matches_[src][i].begin();
                 for(; it!=matches_[src][i].end(); ++it,++id)
                 {
                     L3DPP::Match m = *it;
@@ -1434,8 +1415,8 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float Line3D::similarityForScoring(const L3DPP::Match m1, const L3DPP::Match m2,
-                                       const L3DPP::Segment3D seg3D1,
+    float Line3D::similarityForScoring(const L3DPP::Match& m1, const L3DPP::Match& m2,
+                                       const L3DPP::Segment3D& seg3D1,
                                        const float reg1, const float reg2)
     {
         L3DPP::Segment3D seg3D2 = unprojectMatch(m2,true);
@@ -1466,7 +1447,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float Line3D::similarity(const L3DPP::Segment2D seg1, const L3DPP::Segment2D seg2,
+    float Line3D::similarity(const L3DPP::Segment2D& seg1, const L3DPP::Segment2D& seg2,
                              const bool truncate)
     {
         // check for 3D estimates
@@ -1484,8 +1465,8 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float Line3D::similarity(const L3DPP::Segment3D s1, const L3DPP::Match m1,
-                             const L3DPP::Segment2D seg2, const bool truncate)
+    float Line3D::similarity(const L3DPP::Segment3D& s1, const L3DPP::Match& m1,
+                             const L3DPP::Segment2D& seg2, const bool truncate)
     {
         // check for 3D estimates
         if(entry_map_.find(seg2) == entry_map_.end())
@@ -1573,7 +1554,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    L3DPP::Segment3D Line3D::unprojectMatch(const L3DPP::Match m, const bool src)
+    L3DPP::Segment3D Line3D::unprojectMatch(const L3DPP::Match& m, const bool src)
     {
         if(src)
         {
@@ -1588,7 +1569,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float Line3D::angleBetweenSeg3D(const L3DPP::Segment3D s1, const L3DPP::Segment3D s2,
+    float Line3D::angleBetweenSeg3D(const L3DPP::Segment3D& s1, const L3DPP::Segment3D& s2,
                                     const bool undirected)
     {
         float dot_p = s1.dir().dot(s2.dir());
@@ -1612,7 +1593,7 @@ namespace L3DPP
         float max_score = 0.0f;
         for(size_t i=0; i<matches_[src].size(); ++i)
         {
-            std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
+            std::list<L3DPP::Match>::const_iterator it = matches_[src][i].begin();
             for(; it!=matches_[src][i].end(); ++it)
             {
                 max_score = fmax(max_score,(*it).score3D_);
@@ -1635,7 +1616,7 @@ namespace L3DPP
 
             std::list<L3DPP::Match> matches = matches_[src][i];
             matches_[src][i].clear();
-            std::list<L3DPP::Match>::iterator it = matches.begin();
+            std::list<L3DPP::Match>::const_iterator it = matches.begin();
             for(; it!=matches.end(); ++it)
             {
                 if((*it).score3D_ > 0.0f && (*it).score3D_ > score_lim)
@@ -1693,7 +1674,7 @@ namespace L3DPP
     {
         for(size_t i=0; i<matches_[src].size(); ++i)
         {
-            std::list<L3DPP::Match>::iterator it = matches_[src][i].begin();
+            std::list<L3DPP::Match>::const_iterator it = matches_[src][i].begin();
             for(; it!=matches_[src][i].end(); ++it)
             {
                 L3DPP::Match m = *it;
@@ -1777,7 +1758,7 @@ namespace L3DPP
 
         // compute median scene depth for lines
         std::vector<float> scene_depths_lines;
-        for(std::map<unsigned int,L3DPP::View*>::iterator vit=views_.begin(); vit!=views_.end(); ++vit)
+        for(std::map<unsigned int,L3DPP::View*>::const_iterator vit=views_.begin(); vit!=views_.end(); ++vit)
         {
             if(vit->second->median_depth() > L3D_EPS)
                 scene_depths_lines.push_back(vit->second->median_depth());
@@ -1890,7 +1871,7 @@ namespace L3DPP
             int id1 = -1;
 
             // iterate over matches
-            std::list<L3DPP::Match>::iterator m_it = matches_[m.src_camID_][m.src_segID_].begin();
+            std::list<L3DPP::Match>::const_iterator m_it = matches_[m.src_camID_][m.src_segID_].begin();
             for(; m_it!=matches_[m.src_camID_][m.src_segID_].end(); ++m_it)
             {
                 L3DPP::Match m2 = *m_it;
@@ -1927,7 +1908,7 @@ namespace L3DPP
                         L3DPP::View* v = views_[seg2D2.camID()];
                         std::list<unsigned int> coll = v->collinearSegments(seg2D2.segID());
 
-                        std::list<unsigned int>::iterator cit = coll.begin();
+                        std::list<unsigned int>::const_iterator cit = coll.begin();
                         for(; cit!=coll.end(); ++cit)
                         {
                             L3DPP::Segment2D seg2D2_coll(seg2D2.camID(),*cit);
@@ -1964,7 +1945,7 @@ namespace L3DPP
                 L3DPP::View* v = views_[seg2D.camID()];
                 std::list<unsigned int> coll = v->collinearSegments(seg2D.segID());
 
-                std::list<unsigned int>::iterator cit = coll.begin();
+                std::list<unsigned int>::const_iterator cit = coll.begin();
                 for(; cit!=coll.end(); ++cit)
                 {
                     L3DPP::Segment2D seg2D_coll(seg2D.camID(),*cit);
@@ -1999,7 +1980,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    bool Line3D::unused(const L3DPP::Segment2D seg1, const L3DPP::Segment2D seg2)
+    bool Line3D::unused(const Segment2D &seg1, const Segment2D &seg2)
     {
         bool unused = true;
 
@@ -2013,8 +1994,8 @@ namespace L3DPP
         else
         {
             // not yet used
-            used_[seg1][seg2] = true;
-            used_[seg2][seg1] = true;
+            used_[seg1].insert(seg2);
+            used_[seg2].insert(seg1);
         }
         aff_used_mutex_.unlock();
 
@@ -2022,7 +2003,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    int Line3D::getLocalID(const L3DPP::Segment2D seg)
+    int Line3D::getLocalID(const Segment2D &seg)
     {
         int id;
         aff_id_mutex_.lock();
@@ -2076,10 +2057,10 @@ namespace L3DPP
             entries[s2][s1] = w;
         }
 
-        std::map<int,std::map<int,float> >::iterator it = entries.begin();
+        std::map<int,std::map<int,float> >::const_iterator it = entries.begin();
         for(; it!=entries.end(); ++it)
         {
-            std::map<int,float>::iterator it2 = it->second.begin();
+            std::map<int,float>::const_iterator it2 = it->second.begin();
             for(; it2!=it->second.end(); ++it2)
             {
                 CLEdge e;
@@ -2116,7 +2097,7 @@ namespace L3DPP
         std::map<int,std::map<unsigned int,bool> > cluster2cameras;
         std::vector<int> unique_clusters;
 
-        std::map<int,L3DPP::Segment2D>::iterator it = local2global_.begin();
+        std::map<int,L3DPP::Segment2D>::const_iterator it = local2global_.begin();
         for(; it!=local2global_.end(); ++it)
         {
             int clID = u->find(it->first);
@@ -2172,14 +2153,14 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    L3DPP::LineCluster3D Line3D::get3DlineFromCluster(std::list<L3DPP::Segment2D>& cluster)
+    L3DPP::LineCluster3D Line3D::get3DlineFromCluster(const std::list<L3DPP::Segment2D>& cluster)
     {
         // create scatter matrix
         Eigen::Vector3d P(0,0,0);
         int n = cluster.size()*2;
         Eigen::MatrixXd L_points(3,n);
 
-        std::list<L3DPP::Segment2D>::iterator it = cluster.begin();
+        std::list<L3DPP::Segment2D>::const_iterator it = cluster.begin();
         unsigned int reference_cam = 0;
         float max_len_2D = 0.0f;
         for(size_t i=0; it!=cluster.end(); ++it,i+=2)
@@ -2238,8 +2219,8 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    L3DPP::Segment3D Line3D::project2DsegmentOnto3Dline(const L3DPP::Segment2D seg2D,
-                                                        const L3DPP::Segment3D seg3D,
+    L3DPP::Segment3D Line3D::project2DsegmentOnto3Dline(const L3DPP::Segment2D& seg2D,
+                                                        const L3DPP::Segment3D& seg3D,
                                                         bool& success)
     {
         // tgt line
@@ -2303,14 +2284,13 @@ namespace L3DPP
 #endif //L3DPP_OPENMP
         for(size_t i=0; i<clusters3D_.size(); ++i)
         {
-            L3DPP::LineCluster3D LC = clusters3D_[i];
-            std::list<L3DPP::Segment3D> collinear = findCollinearSegments(LC);
+            std::list<L3DPP::Segment3D> collinear = findCollinearSegments(clusters3D_[i]);
 
             if(collinear.size() > 0)
             {
                 L3DPP::FinalLine3D final;
                 final.collinear3Dsegments_ = collinear;
-                final.underlyingCluster_ = LC;
+                final.underlyingCluster_ = clusters3D_[i];
 
                 cluster_mutex_.lock();
                 lines3D_.push_back(final);
@@ -2332,13 +2312,11 @@ namespace L3DPP
 #endif //L3DPP_OPENMP
         for(size_t i=0; i<lines3D_.size(); ++i)
         {
-            L3DPP::FinalLine3D L = lines3D_[i];
-
-            L3DPP::View* v = views_[L.underlyingCluster_.reference_view()];
+            L3DPP::View* v = views_[lines3D_[i].underlyingCluster_.reference_view()];
 
             std::list<L3DPP::Segment3D> filteredSegments;
-            std::list<L3DPP::Segment3D>::iterator it = L.collinear3Dsegments_.begin();
-            for(; it!=L.collinear3Dsegments_.end(); ++it)
+            std::list<L3DPP::Segment3D>::const_iterator it = lines3D_[i].collinear3Dsegments_.begin();
+            for(; it!=lines3D_[i].collinear3Dsegments_.end(); ++it)
             {
                 if(v->projectedLongEnough(*it))
                     filteredSegments.push_back(*it);
@@ -2362,12 +2340,12 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    std::list<L3DPP::Segment3D> Line3D::findCollinearSegments(L3DPP::LineCluster3D& cluster)
+    std::list<L3DPP::Segment3D> Line3D::findCollinearSegments(const L3DPP::LineCluster3D& cluster)
     {
         // project onto 3D line
         std::list<L3DPP::Segment3D> collinear_segments;
         Eigen::Vector3d COG = 0.5*(cluster.seg3D().P1()+cluster.seg3D().P2());
-        std::list<L3DPP::Segment2D>::iterator it = cluster.residuals()->begin();
+        std::list<L3DPP::Segment2D>::const_iterator it = cluster.residuals()->begin();
 
         std::list<L3DPP::PointOn3DLine> linePoints;
         std::vector<Eigen::Vector3d> pts(cluster.residuals()->size()*2);
@@ -2485,7 +2463,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::saveResultAsSTL(const std::string output_folder)
+    void Line3D::saveResultAsSTL(const std::string& output_folder)
     {
         view_mutex_.lock();
         view_reserve_mutex_.lock();
@@ -2510,7 +2488,7 @@ namespace L3DPP
         {
             L3DPP::FinalLine3D current = lines3D_[i];
 
-            std::list<L3DPP::Segment3D>::iterator it2 = current.collinear3Dsegments_.begin();
+            std::list<L3DPP::Segment3D>::const_iterator it2 = current.collinear3Dsegments_.begin();
             for(; it2!=current.collinear3Dsegments_.end(); ++it2)
             {
                 Eigen::Vector3d P1 = (*it2).P1();
@@ -2550,9 +2528,9 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::saveTempResultAsSTL(const std::string output_folder,
-                                     const std::string suffix,
-                                     const std::vector<L3DPP::Segment3D> lines3D)
+    void Line3D::saveTempResultAsSTL(const std::string& output_folder,
+                                     const std::string& suffix,
+                                     const std::vector<L3DPP::Segment3D>& lines3D)
     {
         // get filename
         std::string filename = output_folder+"/"+createOutputFilename()+"__"+suffix+".stl";
@@ -2599,7 +2577,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::saveResultAsOBJ(const std::string output_folder)
+    void Line3D::saveResultAsOBJ(const std::string& output_folder)
     {
         view_mutex_.lock();
         view_reserve_mutex_.lock();
@@ -2625,7 +2603,7 @@ namespace L3DPP
         {
             L3DPP::FinalLine3D current = lines3D_[i];
 
-            std::list<L3DPP::Segment3D>::iterator it2 = current.collinear3Dsegments_.begin();
+            std::list<L3DPP::Segment3D>::const_iterator it2 = current.collinear3Dsegments_.begin();
             for(; it2!=current.collinear3Dsegments_.end(); ++it2,++lineID,pointID+=2)
             {
                 Eigen::Vector3d P1 = (*it2).P1();
@@ -2638,7 +2616,7 @@ namespace L3DPP
             }
         }
 
-        std::map<size_t,size_t>::iterator it = lines2points.begin();
+        std::map<size_t,size_t>::const_iterator it = lines2points.begin();
         for(; it!=lines2points.end(); ++it)
         {
             file << "l " << it->second << " " << it->second+1 << std::endl;
@@ -2651,7 +2629,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::save3DLinesAsTXT(const std::string output_folder)
+    void Line3D::save3DLinesAsTXT(const std::string& output_folder)
     {
         view_mutex_.lock();
         view_reserve_mutex_.lock();
@@ -2679,7 +2657,7 @@ namespace L3DPP
 
             // write 3D segments
             file << current.collinear3Dsegments_.size() << " ";
-            std::list<L3DPP::Segment3D>::iterator it2 = current.collinear3Dsegments_.begin();
+            std::list<L3DPP::Segment3D>::const_iterator it2 = current.collinear3Dsegments_.begin();
             for(; it2!=current.collinear3Dsegments_.end(); ++it2)
             {
                 Eigen::Vector3d P1 = (*it2).P1();
@@ -2691,7 +2669,7 @@ namespace L3DPP
 
             // write 2D residuals
             file << current.underlyingCluster_.residuals()->size() << " ";
-            std::list<L3DPP::Segment2D>::iterator it3 = current.underlyingCluster_.residuals()->begin();
+            std::list<L3DPP::Segment2D>::const_iterator it3 = current.underlyingCluster_.residuals()->begin();
             for(; it3!=current.underlyingCluster_.residuals()->end(); ++it3)
             {
                 file << (*it3).camID() << " " << (*it3).segID() << " ";
@@ -2710,7 +2688,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::save3DLinesAsBIN(const std::string output_folder)
+    void Line3D::save3DLinesAsBIN(const std::string& output_folder)
     {
         view_mutex_.lock();
         view_reserve_mutex_.lock();
@@ -2747,31 +2725,6 @@ namespace L3DPP
         const Eigen::Matrix3d R = Rz * Ry * Rx;
 
         return R;
-
-        /*
-        Eigen::Vector3d omega(roll,pitch,yaw);
-        double theta = omega.norm();
-        Eigen::Matrix3d J, J2;
-
-        J <<  0        , -omega(2),  omega(1),
-              omega(2) , 0        , -omega(0),
-              -omega(1), omega(0) ,    0;
-
-        J2 = J * J;
-
-        double c1, c2;
-        if(theta < L3D_EPS)
-        {
-          c1 = 1 - theta*theta/6.0;
-          c2 = 1 - theta*theta/24.0;
-        }
-        else
-        {
-          c1 = sin(theta)/theta;
-          c2 = (1.0-cos(theta))/(theta*theta);
-        }
-        return Eigen::Matrix3d::Identity() + c1*J + c2*J2;
-        */
     }
 
     //------------------------------------------------------------------------------
@@ -2802,7 +2755,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    Eigen::Vector4f Line3D::getSegmentCoords2D(const L3DPP::Segment2D seg2D)
+    Eigen::Vector4f Line3D::getSegmentCoords2D(const L3DPP::Segment2D& seg2D)
     {
         Eigen::Vector4f coords(0,0,0,0);
         if(views_.find(seg2D.camID()) != views_.end())
@@ -2820,7 +2773,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void Line3D::eigen2dataArray(L3DPP::DataArray<float>* &DA, const Eigen::MatrixXd M)
+    void Line3D::eigen2dataArray(L3DPP::DataArray<float>* &DA, const Eigen::MatrixXd& M)
     {
         DA = new L3DPP::DataArray<float>(M.cols(),M.rows());
         for(size_t y=0; y<size_t(M.rows()); ++y)

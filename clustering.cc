@@ -3,13 +3,14 @@
 namespace L3DPP
 {
     //------------------------------------------------------------------------------
-    CLUniverse* performClustering(std::list<CLEdge> edges, int numNodes, float c)
+    CLUniverse* performClustering(std::list<CLEdge>& edges, int numNodes,
+                                  float c)
     {
         if(edges.size() == 0)
             return NULL;
 
         // sort edges by weight (increasing)
-        edges.sort(L3DPP::sortEdges);
+        edges.sort(L3DPP::sortCLEdgesByWeight);
 
         // init universe
         CLUniverse *u = new CLUniverse(numNodes);
@@ -20,7 +21,7 @@ namespace L3DPP
             threshold[i] = c;
 
         // perform clustering
-        std::list<CLEdge>::iterator it = edges.begin();
+        std::list<CLEdge>::const_iterator it = edges.begin();
         for(; it!=edges.end(); ++it)
         {
             CLEdge e = *it;

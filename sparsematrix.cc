@@ -32,7 +32,7 @@ namespace L3DPP
         entries_ = new L3DPP::DataArray<float4>(entries.size(),1);
         start_indices_ = new L3DPP::DataArray<int>(num_rows_cols_,1);
         start_indices_->setValue(-1);
-        std::list<CLEdge>::iterator it = entries.begin();
+        std::list<CLEdge>::const_iterator it = entries.begin();
         unsigned int pos = 0;
         int current_rc = -1;
         for(; it!=entries.end(); ++it,++pos)
@@ -106,7 +106,7 @@ namespace L3DPP
                 entries.sort(L3DPP::sortCLEdgesByCol);
 
             start_indices_->setValue(-1);
-            std::list<CLEdge>::iterator it = entries.begin();
+            std::list<CLEdge>::const_iterator it = entries.begin();
             unsigned int pos = 0;
             int current_rc = -1;
             for(; it!=entries.end(); ++it,++pos)

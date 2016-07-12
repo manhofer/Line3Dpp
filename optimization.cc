@@ -96,7 +96,7 @@ namespace L3DPP
 
         // cameras & intrinsics
         std::map<unsigned int,size_t> cam_global2local;
-        std::map<unsigned int,L3DPP::View*>::iterator it = views_.begin();
+        std::map<unsigned int,L3DPP::View*>::const_iterator it = views_.begin();
         for(size_t i=0; it!=views_.end(); ++it,++i)
         {
             // set local ID
@@ -141,7 +141,7 @@ namespace L3DPP
         for(size_t i=0; i<clusters3D_->size(); ++i)
         {
             // iterate over 2D residuals
-            std::list<L3DPP::Segment2D>::iterator it=clusters3D_->at(i).residuals()->begin();
+            std::list<L3DPP::Segment2D>::const_iterator it=clusters3D_->at(i).residuals()->begin();
             for(; it!=clusters3D_->at(i).residuals()->end(); ++it)
             {
                 L3DPP::Segment2D seg2D = *it;
@@ -170,7 +170,7 @@ namespace L3DPP
         }
 
         // set cameras and intrinsics as constant
-        std::map<double*,bool>::iterator uc_it = used_cams.begin();
+        std::map<double*,bool>::const_iterator uc_it = used_cams.begin();
         for(; uc_it!=used_cams.end(); ++uc_it)
         {
             problem->SetParameterBlockConstant(uc_it->first);

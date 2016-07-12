@@ -4,8 +4,8 @@ namespace L3DPP
 {
     //------------------------------------------------------------------------------
     View::View(const unsigned int id, L3DPP::DataArray<float4>* lines,
-               const Eigen::Matrix3d K, const Eigen::Matrix3d R,
-               const Eigen::Vector3d t,
+               const Eigen::Matrix3d& K, const Eigen::Matrix3d& R,
+               const Eigen::Vector3d& t,
                const unsigned int width, const unsigned int height,
                const float median_depth,
                L3DPP::DataArray<float>* superpixels)
@@ -80,7 +80,7 @@ namespace L3DPP
 
     //------------------------------------------------------------------------------
     void View::drawSingleLine(const unsigned int id, cv::Mat& img,
-                              const cv::Scalar color)
+                              const cv::Scalar& color)
     {
         if(id < lines_->width())
         {
@@ -92,7 +92,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void View::drawEpipolarLine(const Eigen::Vector3d epi, cv::Mat& img)
+    void View::drawEpipolarLine(const Eigen::Vector3d& epi, cv::Mat& img)
     {
         // intersect with image borders
         Eigen::Vector3d p1(0,0,1);
@@ -271,13 +271,13 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float View::distance_point2line_2D(const Eigen::Vector3d line, const Eigen::Vector3d p)
+    float View::distance_point2line_2D(const Eigen::Vector3d& line, const Eigen::Vector3d& p)
     {
         return fabs((line.x()*p.x()+line.y()*p.y()+line.z())/sqrtf(line.x()*line.x()+line.y()*line.y()));
     }
 
     //------------------------------------------------------------------------------
-    float View::smallerAngle(const Eigen::Vector2d v1, const Eigen::Vector2d v2)
+    float View::smallerAngle(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2)
     {
         float angle = acos(fmax(fmin(v1.dot(v2),1.0f),-1.0f));
         if(angle > L3D_PI_1_2)
@@ -296,8 +296,8 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    bool View::pointOnSegment(const Eigen::Vector3d p1, const Eigen::Vector3d p2,
-                              const Eigen::Vector3d x)
+    bool View::pointOnSegment(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
+                              const Eigen::Vector3d& x)
     {
         Eigen::Vector2d v1(p1.x()-x.x(),p1.y()-x.y());
         Eigen::Vector2d v2(p2.x()-x.x(),p2.y()-x.y());
@@ -321,14 +321,14 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    Eigen::Vector3d View::getNormalizedRay(const Eigen::Vector3d p)
+    Eigen::Vector3d View::getNormalizedRay(const Eigen::Vector3d& p)
     {
         Eigen::Vector3d ray = RtKinv_*p;
         return ray.normalized();
     }
 
     //------------------------------------------------------------------------------
-    Eigen::Vector3d View::getNormalizedRay(const Eigen::Vector2d p)
+    Eigen::Vector3d View::getNormalizedRay(const Eigen::Vector2d& p)
     {
         return getNormalizedRay(Eigen::Vector3d(p.x(),p.y(),1.0));
     }
@@ -378,7 +378,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    Eigen::Vector2d View::project(const Eigen::Vector3d P)
+    Eigen::Vector2d View::project(const Eigen::Vector3d& P)
     {
         Eigen::Vector3d q = (R_*P + t_);
 
@@ -399,7 +399,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    Eigen::Vector3d View::projectWithCheck(const Eigen::Vector3d P)
+    Eigen::Vector3d View::projectWithCheck(const Eigen::Vector3d& P)
     {
         Eigen::Vector3d q = (R_*P + t_);
 
@@ -426,7 +426,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    bool View::projectedLongEnough(const L3DPP::Segment3D seg3D)
+    bool View::projectedLongEnough(const L3DPP::Segment3D& seg3D)
     {
         Eigen::Vector2d p1 = project(seg3D.P1());
         Eigen::Vector2d p2 = project(seg3D.P2());
@@ -449,7 +449,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    float View::regularizerFrom3Dpoint(const Eigen::Vector3d P)
+    float View::regularizerFrom3Dpoint(const Eigen::Vector3d& P)
     {
         return (P-C_).norm()*k_;
     }
@@ -470,7 +470,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    double View::segmentQualityAngle(const L3DPP::Segment3D seg3D,
+    double View::segmentQualityAngle(const L3DPP::Segment3D& seg3D,
                                      const unsigned int segID)
     {
         if(segID < lines_->width())
@@ -514,7 +514,7 @@ namespace L3DPP
     }
 
     //------------------------------------------------------------------------------
-    void View::translate(const Eigen::Vector3d t)
+    void View::translate(const Eigen::Vector3d& t)
     {
         C_ += t;
         t_ = -R_ * C_;
