@@ -8,24 +8,18 @@ namespace L3DPP
                const Eigen::Vector3d& t,
                const unsigned int width, const unsigned int height,
                const float median_depth,
-               L3DPP::DataArray<float>* superpixels)
+               L3DPP::DataArray<float>* superpixels) :
+        id_(id), lines_(lines), K_(K), R_(R), t_(t),
+        width_(width), height_(height), initial_median_depth_(fmax(fabs(median_depth),L3D_EPS)),
+        superpixels_(superpixels)
     {
         // init
-        id_ = id;
-        lines_ = lines;
-        superpixels_ = superpixels;
-        width_ = width;
-        height_ = height;
         diagonal_ = sqrtf(float(width_*width_+height_*height_));
         min_line_length_ = diagonal_*L3D_DEF_MIN_LINE_LENGTH_FACTOR;
 
         collin_t_ = 0.0f;
 
         // camera
-        K_ = K;
-        R_ = R;
-        t_ = t;
-
         pp_ = Eigen::Vector3d(K_(0,2),K_(1,2),1.0);
 
         Kinv_ = K_.inverse();
@@ -34,7 +28,6 @@ namespace L3DPP
         C_ = Rt_ * (-1.0 * t_);
 
         k_ = 0.0f;
-        initial_median_depth_ = fmax(fabs(median_depth),L3D_EPS);
         median_depth_ = 0.0f;
         median_sigma_ = 0.0f;
 

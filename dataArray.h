@@ -113,12 +113,9 @@ namespace L3DPP
         DataArray(unsigned int width,
                   unsigned int height,
                   const bool allocate_GPU_memory=false,
-                  const std::vector<PixelType>& data=std::vector<PixelType>())
+                  const std::vector<PixelType>& data=std::vector<PixelType>()) :
+            width_(width), height_(height)
         {
-            // init
-            width_ = width;
-            height_ = height;
-
             // pitch (CPU)
             pitchCPU_ = width_*sizeof(PixelType);
 

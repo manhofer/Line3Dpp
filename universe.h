@@ -59,12 +59,11 @@ namespace L3DPP
     class CLUniverse
     {
     public:
-        CLUniverse(int numNodes)
+        CLUniverse(int numNodes) : num_(numNodes)
         {
             // init
-            elements_ = new CLUnivElement[numNodes];
-            num_ = numNodes;
-            for(int i = 0; i < numNodes; ++i)
+            elements_ = new CLUnivElement[num_];
+            for(int i = 0; i < num_; ++i)
             {
                 elements_[i].rank_ = 0;
                 elements_[i].size_ = 1;

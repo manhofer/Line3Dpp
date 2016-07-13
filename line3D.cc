@@ -7,14 +7,13 @@ namespace L3DPP
                    const int max_img_width,
                    const unsigned int max_line_segments,
                    const bool neighbors_by_worldpoints,
-                   const bool use_GPU)
+                   const bool use_GPU) :
+        data_folder_(output_folder+"/L3D++_data/"), load_segments_(load_segments),
+        max_image_width_(max_img_width), max_line_segments_(max_line_segments),
+        neighbors_by_worldpoints_(neighbors_by_worldpoints)
+
     {
         // set params
-        data_folder_ = output_folder+"/L3D++_data/";
-        max_image_width_ = max_img_width;
-        max_line_segments_ = max_line_segments;
-        load_segments_ = load_segments;
-        neighbors_by_worldpoints_ = neighbors_by_worldpoints;
         num_lines_total_ = 0;
         med_scene_depth_ = L3D_EPS;
         med_scene_depth_lines_ = 0.0f;

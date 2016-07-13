@@ -7,13 +7,12 @@ namespace L3DPP
     //------------------------------------------------------------------------------
     SparseMatrix::SparseMatrix(std::list<L3DPP::CLEdge>& entries, const unsigned int num_rows_cols,
                                const float normalization_factor,
-                               const bool sort_by_row, const bool already_sorted)
+                               const bool sort_by_row, const bool already_sorted) :
+        num_rows_cols_(num_rows_cols), row_sorted_(sort_by_row)
     {
         // init
         entries_ = NULL;
         start_indices_ = NULL;
-        row_sorted_ = sort_by_row;
-        num_rows_cols_ = num_rows_cols;
         num_entries_ = entries.size();
 
         if(entries.size() == 0 || num_rows_cols == 0)
