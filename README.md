@@ -303,17 +303,16 @@ Acknowledgements
 ================
 
 This work has been supported by the Austrian Research Promotion Agency (FFG) project FreeLine (Bridge1/843450).
+It was done during my time as a PhD student at the Institute for Computer Graphics and Vision at Graz University of Technology (Austria).
 
 Contact
 =======
 
-If you have any problems, questions or suggestions please do not hesitate to contact us! Also if you find some bugs please let us know!
+If you have any problems, questions or suggestions please do not hesitate to contact me! Also if you find some bugs please let me know!
 
 **Main contact:**
 
-Manuel Hofer  
-Institute for Computer Graphics and Vision  
-Graz University of Technology  
-Graz/Austria  
-mail: hofer [at] icg.tugraz.at  
-web:  http://aerial.icg.tugraz.at/  
+Manuel Hofer
+Senior Computer Vision Engineer @ Naked Labs  
+mail: man.hofer [at] gmail.com  
+web:  http://naked.fit/  
