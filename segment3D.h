@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // std
 #include <list>
+#include <set>
 
 // internal
 #include "commons.h"
