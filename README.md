@@ -1,6 +1,9 @@
-========
 Line3D++
 ========
+
+**Important information:**
+This software was implemented and tested in 2016. The stated support for various SfM pipelines (listed below) might not be valid anymore, since newer versions of the respective tools (e.g. colmap or Pix4D) might have changed their output formats since then. However, my current full-time occupation does not allow me to investigate this matter further, and to update the given interfaces to the supported SfM pipelines, or to add new interfaces. If you encounter problems of this sort feel free to contact me, but I am not sure if I will be able to assist you.
+You can, of course, always just use Line3D++ as a library, and write your own interface to any given SfM output (see instructions below). I am more than happy to assist you with that. If you happen to create a new (working) interface to one of the already supported (or even a new) SfM pipeline, feel free to create a pull request so I can integrate it into the code.
 
 About
 =====
