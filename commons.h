@@ -29,6 +29,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <queue>
 #include <stdlib.h>
 
+// windows fix
+#define M_PI   3.14159265358979323846264338327950288
+#define M_PI_2 1.57079632679489661923132169163975144
+
+
 /**
  * Line3D++ - Constants
  * ====================

@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP
-    for(unsigned int i=0; i<num_cams; ++i)
+    for(int i=0; i<num_cams; ++i)
     {   
         // load image
         std::string img_filename = "";

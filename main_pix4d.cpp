@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP
-    for(size_t i=0; i<feat_observations.size(); ++i)
+    for(int i=0; i<feat_observations.size(); ++i)
     {
         std::list<std::pair<size_t,Eigen::Vector2d> > obs = feat_observations[i];
         if(obs.size() > 2)
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP
-    for(unsigned int i=0; i<cams_rotation.size(); ++i)
+    for(int i=0; i<cams_rotation.size(); ++i)
     {
         // load image
         std::string img_filename = imageFolder+"/"+cams_filenames[i];

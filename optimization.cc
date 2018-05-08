@@ -1,5 +1,8 @@
 #include "optimization.h"
 
+// windows fix
+#define size_t int
+
 #ifdef L3DPP_CERES
 
 namespace L3DPP
