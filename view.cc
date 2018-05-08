@@ -1,8 +1,5 @@
 #include "view.h"
 
-// windows fix
-#define size_t int
-
 namespace L3DPP
 {
     //------------------------------------------------------------------------------
@@ -195,7 +192,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<collin_.size(); ++i)
+        for(int i=0; i<collin_.size(); ++i)
         {
             for(size_t c=0; c<buffer->width(); ++c)
             {
@@ -220,7 +217,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t r=0; r<collin_.size(); ++r)
+        for(int r=0; r<collin_.size(); ++r)
         {
             Eigen::Vector3d p[2];
             float4 l1 = lines_->dataCPU(r,0)[0];
