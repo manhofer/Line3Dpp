@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP
-    for(unsigned int i=0; i<img_seq.size(); ++i)
+    for(int i=0; i<img_seq.size(); ++i)
     {
         // get camera params
         unsigned int imgID = img_seq[i];

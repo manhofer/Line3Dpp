@@ -1,5 +1,8 @@
 #include "line3D.h"
 
+// windows fix
+#define size_t int
+
 namespace L3DPP
 {
     //------------------------------------------------------------------------------

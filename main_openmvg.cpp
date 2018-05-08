@@ -375,7 +375,7 @@ int main(int argc, char *argv[])
 #ifdef L3DPP_OPENMP
     #pragma omp parallel for
 #endif //L3DPP_OPENMP
-    for(unsigned int i=0; i<num_cams; ++i)
+    for(int i=0; i<num_cams; ++i)
     {
         unsigned int camID = cams_view_IDs[i];
         unsigned int intID = cams_intrinsic_IDs[i];

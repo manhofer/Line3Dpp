@@ -1,5 +1,8 @@
 #include "view.h"
 
+// windows fix
+#define size_t int
+
 namespace L3DPP
 {
     //------------------------------------------------------------------------------
