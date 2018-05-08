@@ -1,8 +1,5 @@
 #include "line3D.h"
 
-// windows fix
-#define size_t int
-
 namespace L3DPP
 {
     //------------------------------------------------------------------------------
@@ -441,7 +438,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<view_order_.size(); ++i)
+        for(int i=0; i<view_order_.size(); ++i)
         {
             unsigned int camID = view_order_[i];
 
@@ -463,7 +460,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<view_order_.size(); ++i)
+        for(int i=0; i<view_order_.size(); ++i)
         {
             unsigned int camID = view_order_[i];
 
@@ -512,7 +509,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<3; ++i)
+        for(int i=0; i<3; ++i)
         {
             std::map<unsigned int,L3DPP::View*>::const_iterator it = views_.begin();
             for(; it!=views_.end(); ++it)
@@ -554,7 +551,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<view_order_.size(); ++i)
+        for(int i=0; i<view_order_.size(); ++i)
         {
             views_[view_order_[i]]->translate(t);
         }
@@ -563,7 +560,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<lines3D_.size(); ++i)
+        for(int i=0; i<lines3D_.size(); ++i)
         {
             L3DPP::FinalLine3D L = lines3D_[i];
             std::list<L3DPP::Segment3D>::iterator it = L.collinear3Dsegments_.begin();
@@ -821,7 +818,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<matches_[src].size(); ++i)
+        for(int i=0; i<matches_[src].size(); ++i)
         {
             std::list<L3DPP::Match> remaining;
 
@@ -914,7 +911,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t r=0; r<lines_src->width(); ++r)
+        for(int r=0; r<lines_src->width(); ++r)
         {
             int new_matches = 0;
 
@@ -1201,7 +1198,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<matches_[src].size(); ++i)
+        for(int i=0; i<matches_[src].size(); ++i)
         {
             matches_[src][i].sort(L3DPP::sortMatchesByIDs);
         }
@@ -1221,7 +1218,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<matches_[src].size(); ++i)
+        for(int i=0; i<matches_[src].size(); ++i)
         {
             bool valid_match_exists = false;
 
@@ -1338,7 +1335,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<matches_[src].size(); ++i)
+        for(int i=0; i<matches_[src].size(); ++i)
         {
             int offset = ranges->dataCPU(i,0)[0].x;
             if(offset >= 0)
@@ -1374,7 +1371,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<matches_[src].size(); ++i)
+        for(int i=0; i<matches_[src].size(); ++i)
         {
             bool valid_match_exists = false;
             int offset = ranges->dataCPU(i,0)[0].x;
@@ -1611,7 +1608,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<matches_[src].size(); ++i)
+        for(int i=0; i<matches_[src].size(); ++i)
         {
             L3DPP::Match best_match;
             best_match.score3D_ = 0.0f;
@@ -1864,7 +1861,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<estimated_position3D_.size(); ++i)
+        for(int i=0; i<estimated_position3D_.size(); ++i)
         {
             L3DPP::Segment3D seg3D = estimated_position3D_[i].first;
             L3DPP::Match m = estimated_position3D_[i].second;
@@ -2128,7 +2125,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<unique_clusters.size(); ++i)
+        for(int i=0; i<unique_clusters.size(); ++i)
         {
             int clID = unique_clusters[i];
 
@@ -2284,7 +2281,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<clusters3D_.size(); ++i)
+        for(int i=0; i<clusters3D_.size(); ++i)
         {
             std::list<L3DPP::Segment3D> collinear = findCollinearSegments(clusters3D_[i]);
 
@@ -2312,7 +2309,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<lines3D_.size(); ++i)
+        for(int i=0; i<lines3D_.size(); ++i)
         {
             L3DPP::View* v = views_[lines3D_[i].underlyingCluster_.reference_view()];
 

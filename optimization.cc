@@ -1,8 +1,5 @@
 #include "optimization.h"
 
-// windows fix
-#define size_t int
-
 #ifdef L3DPP_CERES
 
 namespace L3DPP
@@ -31,7 +28,7 @@ namespace L3DPP
 #ifdef L3DPP_OPENMP
         #pragma omp parallel for
 #endif //L3DPP_OPENMP
-        for(size_t i=0; i<clusters3D_->size(); ++i)
+        for(int i=0; i<clusters3D_->size(); ++i)
         {
             L3DPP::LineCluster3D LC = clusters3D_->at(i);
 
