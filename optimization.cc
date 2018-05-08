@@ -67,7 +67,7 @@ namespace L3DPP
             Eigen::Vector3d s(sx(2,1),sx(0,2),sx(1,0));
             double omega = m.norm();
 
-            if(isnan(s(0)) || isnan(s(1)) || isnan(s(2)) || isnan(omega))
+            if(std::isnan(s(0)) || std::isnan(s(1)) || std::isnan(s(2)) || std::isnan(omega))
             {
                 // symmetric line coords... do not bundle
                 lines[i * LINE_SIZE + 0] = -1;
