@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // std
 #include <map>
+#include <iostream>
 
 // external
 #include "eigen3/Eigen/Eigen"

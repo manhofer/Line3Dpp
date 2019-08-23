@@ -316,6 +316,5 @@ If you have any problems, questions or suggestions please do not hesitate to con
 **Main contact:**
 
 Manuel Hofer  
-Senior Computer Vision Engineer @ Naked Labs  
+Applied Scientist @ Amazon  
 mail: man.hofer [at] gmail.com  
-web:  http://naked.fit/  
