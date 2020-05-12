@@ -12,27 +12,17 @@
  * and based on their official source code, which can be found at
  * from http://cs.brown.edu/~pff/segment/
  *
- * Their code is put under the GNU GENERAL PUBLIC LICENSE,
- * and so is this version.
+ * Their code is put under the GNU GENERAL PUBLIC LICENSE.
  */
 
-/*
-Line3D++ - Line-based Multi View Stereo
-Copyright (C) 2015  Manuel Hofer
+/* 
+ * Line3D++ - Line-based Multi View Stereo
+ * Copyright (C) 2015  Manuel Hofer
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 /**
  * Universe (for clustering.h)
