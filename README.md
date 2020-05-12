@@ -110,7 +110,7 @@ Set `CERES_LIBRARY` to the `ceres.lib` file, and `CERES_ROOT` to the ceres inclu
 License
 =======
 
-This software is published under the **GNU General Public License**. More information can be found here: http://www.gnu.org/licenses/
+This software is published under the **Mozilla Public License 2.0**. More information can be found here: https://www.mozilla.org/en-US/MPL/2.0/FAQ/
 
 Usage
 =====
@@ -315,6 +315,5 @@ If you have any problems, questions or suggestions please do not hesitate to con
 
 **Main contact:**
 
-Manuel Hofer  
-Applied Scientist @ Amazon  
+Manuel Hofer 
 mail: man.hofer [at] gmail.com  
